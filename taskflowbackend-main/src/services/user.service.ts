@@ -4,7 +4,18 @@ import { getThemeFactory } from '../patterns/ThemeFactory';
 export const getUserProfile = async (id: string) => {
   const user = await User.findById(id).select('-passwordHash');
   if (!user) throw new Error('User not found');
-  return user;
+
+  // Retornar perfil junto con la configuración visual del tema actual
+  const factory = getThemeFactory(user.theme);
+  const themeConfig = factory.createTheme();
+
+  return {
+    _id: user._id,
+    name: user.name,
+    email: user.email,
+    theme: user.theme,
+    themeConfig, // colores generados por AbstractFactory
+  };
 };
 
 export const updateUserProfile = async (id: string, name?: string, theme?: 'light' | 'dark' | 'custom') => {
@@ -12,20 +23,20 @@ export const updateUserProfile = async (id: string, name?: string, theme?: 'ligh
   if (!user) throw new Error('User not found');
 
   if (name) user.name = name;
-  if (theme) {
-    user.theme = theme;
-    // Apply Abstract Factory pattern specifically mentioned in plan
-    const factory = getThemeFactory(theme);
-    const themeConfig = factory.createTheme();
-    // In a real app we might return this config or use it, for now we just show it's used
-  }
+  if (theme) user.theme = theme;
 
   const updatedUser = await user.save();
+
+  // AbstractFactory: generar configuración visual según el tema guardado
+  const factory = getThemeFactory(updatedUser.theme);
+  const themeConfig = factory.createTheme();
+
   return {
     _id: updatedUser._id,
     name: updatedUser.name,
     email: updatedUser.email,
     theme: updatedUser.theme,
+    themeConfig, // el frontend puede leer estos colores directamente
   };
 };
 
