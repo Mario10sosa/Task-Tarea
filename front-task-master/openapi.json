@@ -1,0 +1,687 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Project Management API (Node.js/TypeScript)",
+    "version": "1.0.0",
+    "description": "API Completa para el Sistema de Gestión de Proyectos con Patrones de Diseño"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000/api",
+      "description": "Servidor Local"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Introduce el token JWT emitido al iniciar sesión."
+      }
+    }
+  },
+  "security": [
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "summary": "Registrar un usuario nuevo",
+        "tags": ["Auth"],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "email": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Usuario registrado exitosamente" },
+          "400": { "description": "El usuario ya existe o hubo un error de validación" }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "summary": "Iniciar sesión y obtener token JWT",
+        "tags": ["Auth"],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Login exitoso, devuelve JWT" },
+          "401": { "description": "Credenciales inválidas" }
+        }
+      }
+    },
+    "/users/{id}/profile": {
+      "get": {
+        "summary": "Obtener perfil del usuario",
+        "tags": ["Users"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Datos del perfil" }
+        }
+      },
+      "put": {
+        "summary": "Actualizar perfil de usuario (nombre y tema)",
+        "tags": ["Users"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "theme": { "type": "string", "enum": ["light", "dark", "custom"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Perfil actualizado" }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar perfil de usuario",
+        "tags": ["Users"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Cuenta eliminada" }
+        }
+      }
+    },
+    "/projects": {
+      "get": {
+        "summary": "Obtener los proyectos del usuario",
+        "tags": ["Projects"],
+        "responses": {
+          "200": { "description": "Lista de proyectos donde el usuario es dueño o miembro" }
+        }
+      },
+      "post": {
+        "summary": "Crear un nuevo proyecto",
+        "tags": ["Projects"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Proyecto creado" }
+        }
+      }
+    },
+    "/projects/{id}": {
+      "get": {
+        "summary": "Información detallada de un proyecto",
+        "tags": ["Projects"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Detalles del proyecto" }
+        }
+      },
+      "put": {
+        "summary": "Actualizar proyecto",
+        "tags": ["Projects"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "description": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Proyecto modificado" }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar proyecto (Solo dueño)",
+        "tags": ["Projects"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Proyecto vaciado" }
+        }
+      }
+    },
+    "/projects/{id}/clone": {
+      "post": {
+        "summary": "Clonar proyecto (Patrón Prototype)",
+        "tags": ["Projects"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "201": { "description": "Clon profundo realizado" }
+        }
+      }
+    },
+    "/projects/{id}/members/{userId}": {
+      "delete": {
+        "summary": "Remover miembro de proyecto (Solo dueño)",
+        "tags": ["Projects"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Miembro extraído con éxito" }
+        }
+      }
+    },
+    "/boards/project/{id}": {
+      "get": {
+        "summary": "Ver Boards de un proyecto especifico",
+        "tags": ["Boards"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "ID del Proyecto",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Lista de Boards" }
+        }
+      },
+      "post": {
+        "summary": "Crear un Board con columnas personalizadas",
+        "tags": ["Boards"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "ID del Proyecto",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string", "example": "Backend Development" },
+                  "columns": {
+                    "type": "array",
+                    "items": { "type": "string" },
+                    "example": ["Todo", "In Progress", "Code Review", "Done"]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Tablero creado" }
+        }
+      }
+    },
+    "/boards/{id}": {
+      "put": {
+        "summary": "Editar columnas o nombre del board",
+        "tags": ["Boards"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "columns": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Ok" }
+        }
+      },
+      "delete": {
+        "summary": "Elimina el Board",
+        "tags": ["Boards"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Ok" }
+        }
+      }
+    },
+    "/tasks/board/{id}": {
+      "get": {
+        "summary": "Listar tareas en el tablero",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" }
+          },
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "in": "query",
+            "name": "priority",
+            "required": false,
+            "schema": { "type": "string" }
+          },
+          {
+            "in": "query",
+            "name": "assignedTo",
+            "required": false,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Lista de tareas" }
+        }
+      }
+    },
+    "/tasks/board/{id}/factory": {
+      "post": {
+        "summary": "Crear tarea mediante Patrón Factory",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "ID del Tablero (Board)",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "projectId": { "type": "string", "example": "65bfa2..." },
+                  "columnId": { "type": "string", "example": "Todo" },
+                  "taskType": { "type": "string", "example": "BUG", "enum": ["BUG", "FEATURE", "STORY", "EPIC"] },
+                  "title": { "type": "string", "example": "Fija el color del form" },
+                  "description": { "type": "string" },
+                  "priority": { "type": "string", "enum": ["low", "medium", "high", "urgent"] },
+                  "assignedTo": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Tarea Creada y acoplada dinámicamente según el tipo de Task" }
+        }
+      }
+    },
+    "/tasks/board/{id}/builder": {
+      "post": {
+        "summary": "Crear tarea avanzada (Patrón Builder)",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "projectId": { "type": "string" },
+                  "columnId": { "type": "string", "example": "In Progress" },
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "storyPoints": { "type": "number", "example": 8 },
+                  "tags": { "type": "array", "items": { "type": "string" }, "example": ["ui", "critical"] },
+                  "acceptanceCriteria": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Tarea Creada sin depender del constructor tradicional sino encadenando parámetros" }
+        }
+      }
+    },
+    "/tasks/{id}": {
+      "get": {
+        "summary": "Detalles completos de una tarea (Incluyendo historial)",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Información de la tarea" }
+        }
+      },
+      "put": {
+        "summary": "Autoguardar propiedades básicas",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "title": { "type": "string" },
+                  "description": { "type": "string" },
+                  "priority": { "type": "string" },
+                  "estimatedHours": { "type": "number" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Modificado" }
+        }
+      },
+      "delete": {
+        "summary": "Eliminar Tarea",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Borrado" }
+        }
+      }
+    },
+    "/tasks/{id}/move": {
+      "put": {
+        "summary": "Mover Tarea De Columna/Estado",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "columnId": { "type": "string", "example": "Done" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Genera una entrada de historial automáticamente registrando la columna previa a la nueva" }
+        }
+      }
+    },
+    "/tasks/{id}/clone": {
+      "post": {
+        "summary": "Mover y Clonar Tarea (Patrón Prototype)",
+        "tags": ["Tasks"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "boardId": { "type": "string", "example": "Opcional: ID de board diferente" },
+                  "columnId": { "type": "string", "example": "Copiar a otra columna opcional" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Tarea completamente duplicada preservando estructura pero con ID original y limpiando su historial" }
+        }
+      }
+    },
+    "/invitations/project/{id}": {
+      "post": {
+        "summary": "Invitar usuario a Proyecto",
+        "tags": ["Invitations"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string", "example": "email@example.com" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Invitación en base de datos generada e UUID" }
+        }
+      }
+    },
+    "/invitations/{token}": {
+      "get": {
+        "summary": "Visualizar Invitación",
+        "tags": ["Invitations"],
+        "security": [],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Información pública de invitación (quien te invitó y en qué proyecto)" }
+        }
+      }
+    },
+    "/invitations/{token}/accept": {
+      "post": {
+        "summary": "Usuario acepta la invitación recibida",
+        "tags": ["Invitations"],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "El usuario se vuelve Miembro del Proyecto del array" }
+        }
+      }
+    },
+    "/invitations/{token}/reject": {
+      "post": {
+        "summary": "Rechazar invitación",
+        "tags": ["Invitations"],
+        "security": [],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "token",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Declinada permanentemente" }
+        }
+      }
+    }
+  }
+}
