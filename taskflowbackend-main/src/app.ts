@@ -13,6 +13,9 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Decorator — Servir archivos adjuntos estáticos
+app.use('/uploads', express.static(require('path').join(process.cwd(), 'uploads')));
+
 // Routes
 app.use('/api', apiRoutes);
 

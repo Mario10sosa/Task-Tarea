@@ -33,8 +33,9 @@ import {
   CheckCircle2,
   Circle
 } from 'lucide-react';
-import type { Task } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { SubtaskProgress } from '@/components/subtask-progress';
+import { TaskDecorations } from '@/components/task-decorations';
 
 interface TaskDetailSheetProps {
   task: Task | null;
@@ -245,6 +246,9 @@ export function TaskDetailSheet({
                 )}
               </div>
             </div>
+
+            <SubtaskProgress taskId={task._id} />
+            <TaskDecorations taskId={task._id} />
 
             <Separator className="bg-border/40" />
 

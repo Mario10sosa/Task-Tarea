@@ -88,3 +88,126 @@ export const deleteTask = async (req: Request, res: Response) => {
     res.status(400).json({ message: error.message });
   }
 };
+
+// ── Composite: Subtareas y Progreso ───────────────────────────────────────────
+
+export const createSubtask = async (req: Request, res: Response) => {
+  try {
+    const parentTaskId = req.params.id as string;
+    const subtask = await taskService.createSubtask(parentTaskId, req.body);
+    res.status(201).json(subtask);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const getSubtasks = async (req: Request, res: Response) => {
+  try {
+    const subtasks = await taskService.getSubtasks(req.params.id as string);
+    res.json(subtasks);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getTaskProgress = async (req: Request, res: Response) => {
+  try {
+    const result = await taskService.getTaskProgress(req.params.id as string);
+    res.json(result);
+  } catch (error: any) {
+    res.status(404).json({ message: error.message });
+  }
+};
+
+// ── Decorator: Etiquetas, Adjuntos y Presentación ─────────────────────────────
+
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
+
+// Configuración de multer — almacenamiento local en /uploads
+const uploadsDir = path.join(process.cwd(), 'uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => cb(null, uploadsDir),
+  filename:    (_req, file, cb) => {
+    const unique = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    cb(null, `${unique}${path.extname(file.originalname)}`);
+  },
+});
+
+export const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB máx (RF-04.7)
+  fileFilter: (_req, file, cb) => {
+    const allowed = /jpeg|jpg|png|gif|pdf|doc|docx|xls|xlsx|txt|zip/;
+    const ext     = allowed.test(path.extname(file.originalname).toLowerCase());
+    ext ? cb(null, true) : cb(new Error('Tipo de archivo no permitido'));
+  },
+});
+
+export const getDecoratedTask = async (req: Request, res: Response) => {
+  try {
+    const result = await taskService.getDecoratedTask(req.params.id as string);
+    res.json(result);
+  } catch (error: any) {
+    res.status(404).json({ message: error.message });
+  }
+};
+
+export const addLabel = async (req: Request, res: Response) => {
+  try {
+    const { name, color } = req.body;
+    if (!name || !color) return res.status(400).json({ message: 'name y color son requeridos' });
+    const result = await taskService.addLabel(req.params.id as string, { name, color });
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const removeLabel = async (req: Request, res: Response) => {
+  try {
+    const result = await taskService.removeLabel(
+      req.params.id as string,
+      req.params.labelName as string
+    );
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const addAttachment = async (req: Request, res: Response) => {
+  try {
+    if (!req.file) return res.status(400).json({ message: 'No se recibió ningún archivo' });
+
+    const baseUrl = `${req.protocol}://${req.get('host')}`;
+    const result  = await taskService.addAttachment(req.params.id as string, {
+      filename:     req.file.filename,
+      originalName: req.file.originalname,
+      mimetype:     req.file.mimetype,
+      size:         req.file.size,
+      url:          `${baseUrl}/uploads/${req.file.filename}`,
+    });
+    res.status(201).json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+export const removeAttachment = async (req: Request, res: Response) => {
+  try {
+    const result = await taskService.removeAttachment(
+      req.params.id as string,
+      req.params.filename as string
+    );
+    // Eliminar el archivo físico
+    const filePath = path.join(uploadsDir, req.params.filename as string);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    res.json(result);
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};

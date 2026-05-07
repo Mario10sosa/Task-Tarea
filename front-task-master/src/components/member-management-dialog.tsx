@@ -13,16 +13,10 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Trash2, Shield, Users, Mail, Clock as ClockIcon, UserPlus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import type { Project } from '@/lib/types';
+import type { Project, ProjectMember } from '@/lib/types';
+import { getMemberName, getMemberEmail, getMemberId, getMemberInitials } from '@/lib/types';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-
-interface Member {
-  _id: string;
-  name: string;
-  email: string;
-  avatar?: string;
-}
 
 interface Invitation {
   _id: string;
@@ -38,10 +32,7 @@ export function MemberManagementDialog({ project }: { project: Project }) {
   const { data: invitations } = usePendingInvitations(project._id);
 
   const handleRemove = async (userId: string) => {
-    if (!window.confirm('¿Estás seguro de que quieres eliminar a este miembro del proyecto?')) {
-      return;
-    }
-
+    if (!window.confirm('¿Estás seguro de que quieres eliminar a este miembro del proyecto?')) return;
     try {
       await removeMember.mutateAsync({ projectId: project._id, userId });
     } catch (error) {
@@ -49,18 +40,17 @@ export function MemberManagementDialog({ project }: { project: Project }) {
     }
   };
 
-  // Type cast members if they are objects
-  const members = project.members as unknown as Member[];
+  const members: ProjectMember[] = project.members || [];
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <div className="flex -space-x-2 ml-4 cursor-pointer hover:opacity-80 transition-opacity">
-          {members.slice(0, 5).map((member) => (
-            <Avatar key={member._id} className="w-8 h-8 border-2 border-background ring-1 ring-border shadow-sm">
-              <AvatarImage src={member.avatar} />
+          {members.slice(0, 5).map((member, i) => (
+            <Avatar key={getMemberId(member) || i} className="w-8 h-8 border-2 border-background ring-1 ring-border shadow-sm">
+              <AvatarImage src={undefined} />
               <AvatarFallback className="text-[10px] bg-primary/10 text-primary uppercase">
-                {member.name?.substring(0, 2)}
+                {getMemberInitials(member)}
               </AvatarFallback>
             </Avatar>
           ))}
@@ -71,6 +61,7 @@ export function MemberManagementDialog({ project }: { project: Project }) {
           )}
         </div>
       </DialogTrigger>
+
       <DialogContent className="sm:max-w-[450px] p-0 overflow-hidden border-none shadow-2xl">
         <div className="h-1.5 bg-primary w-full" />
         <DialogHeader className="p-6 pb-2">
@@ -84,7 +75,7 @@ export function MemberManagementDialog({ project }: { project: Project }) {
             Gestiona los miembros activos y rastrea las invitaciones pendientes.
           </DialogDescription>
         </DialogHeader>
-        
+
         <Tabs defaultValue="members" className="w-full">
           <div className="px-6">
             <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1 rounded-xl">
@@ -116,42 +107,48 @@ export function MemberManagementDialog({ project }: { project: Project }) {
 
               <ScrollArea className="h-[280px] pr-4 -mr-4">
                 <div className="space-y-3">
-                  {members.map((member) => (
-                    <div 
-                      key={member._id} 
-                      className="flex items-center justify-between p-3 rounded-xl border border-transparent hover:border-border/60 hover:bg-muted/30 transition-all group"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <Avatar className="w-10 h-10 border border-border/40 shadow-sm">
-                          <AvatarImage src={member.avatar} />
-                          <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold uppercase">
-                            {member.name?.substring(0, 2)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex flex-col min-w-0">
-                          <span className="text-sm font-bold truncate text-foreground/90">{member.name}</span>
-                          <span className="text-[11px] text-muted-foreground truncate">{member.email}</span>
+                  {members.map((member, i) => {
+                    const memberId = getMemberId(member);
+                    const name     = getMemberName(member);
+                    const email    = getMemberEmail(member);
+                    const isOwner  = memberId === project.ownerId;
+
+                    return (
+                      <div
+                        key={memberId || i}
+                        className="flex items-center justify-between p-3 rounded-xl border border-transparent hover:border-border/60 hover:bg-muted/30 transition-all group"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Avatar className="w-10 h-10 border border-border/40 shadow-sm">
+                            <AvatarFallback className="bg-primary/5 text-primary text-xs font-bold uppercase">
+                              {getMemberInitials(member)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-sm font-bold truncate text-foreground/90">{name}</span>
+                            <span className="text-[11px] text-muted-foreground truncate">{email}</span>
+                          </div>
                         </div>
+
+                        {!isOwner && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all rounded-lg"
+                            onClick={() => handleRemove(memberId)}
+                            disabled={removeMember.isPending}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {isOwner && (
+                          <Badge variant="outline" className="text-[9px] uppercase tracking-tighter font-black bg-muted/50 text-muted-foreground border-border/40 px-1.5 h-5">
+                            Propietario
+                          </Badge>
+                        )}
                       </div>
-                      
-                      {member._id !== project.ownerId && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 opacity-0 group-hover:opacity-100 transition-all rounded-lg"
-                          onClick={() => handleRemove(member._id)}
-                          disabled={removeMember.isPending}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      )}
-                      {member._id === project.ownerId && (
-                        <Badge variant="outline" className="text-[9px] uppercase tracking-tighter font-black bg-muted/50 text-muted-foreground border-border/40 px-1.5 h-5">
-                          Propietario
-                        </Badge>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </ScrollArea>
             </div>
@@ -165,14 +162,16 @@ export function MemberManagementDialog({ project }: { project: Project }) {
                     <Mail className="w-6 h-6 text-muted-foreground/40" />
                   </div>
                   <h4 className="text-sm font-bold text-muted-foreground">No hay invitaciones pendientes</h4>
-                  <p className="text-[11px] text-muted-foreground/60 mt-1 max-w-[180px]">Cuando invites a alguien por correo, aparecerá aquí hasta que acepte.</p>
+                  <p className="text-[11px] text-muted-foreground/60 mt-1 max-w-[180px]">
+                    Cuando invites a alguien por correo, aparecerá aquí hasta que acepte.
+                  </p>
                 </div>
               ) : (
                 <ScrollArea className="h-[320px] pr-4 -mr-4">
                   <div className="space-y-3">
                     {invitations.map((inv: Invitation) => (
-                      <div 
-                        key={inv._id} 
+                      <div
+                        key={inv._id}
                         className="flex items-center justify-between p-3 rounded-xl border border-border/40 bg-muted/20 hover:bg-muted/30 transition-all"
                       >
                         <div className="flex items-center gap-3 min-w-0">
@@ -198,7 +197,7 @@ export function MemberManagementDialog({ project }: { project: Project }) {
             </div>
           </TabsContent>
         </Tabs>
-        
+
         <div className="p-6 bg-muted/20 border-t border-border/40 flex justify-end gap-3">
           <Button variant="outline" onClick={() => setOpen(false)} className="h-9 px-4 font-bold text-xs uppercase tracking-wider">
             Cerrar Panel
