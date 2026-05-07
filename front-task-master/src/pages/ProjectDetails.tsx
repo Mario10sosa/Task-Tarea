@@ -29,6 +29,8 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
+import { ReportDownloadButton } from '@/components/report-download-button';
+import { ProjectDashboard } from '@/components/project-dashboard';
 
 export function ProjectDetailsPage() {
   const { id: projectId } = useParams();
@@ -73,6 +75,10 @@ export function ProjectDetailsPage() {
         <div className="flex items-center gap-2">
            <InviteUserDialog projectId={projectId || ''} />
            <ProjectSettingsDialog project={project} />
+           <ReportDownloadButton
+             projectId={project._id}
+             projectName={project.name}
+           />
         </div>
       </div>
 
@@ -84,6 +90,9 @@ export function ProjectDetailsPage() {
         >
           <div className="flex items-center justify-between">
             <TabsList className="bg-muted/50 p-1">
+              <TabsTrigger value="dashboard" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                Dashboard
+              </TabsTrigger>
               {boards.map((board) => (
                 <TabsTrigger key={board._id} value={board._id} className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
                   {board.name}
@@ -114,6 +123,9 @@ export function ProjectDetailsPage() {
                />
              </TabsContent>
           ))}
+          <TabsContent value="dashboard" className="flex-1 mt-4 outline-none">
+            <ProjectDashboard projectId={project._id} />
+          </TabsContent>
         </Tabs>
       ) : (
         <div className="flex flex-col items-center justify-center h-[400px] border border-dashed rounded-xl bg-muted/20">

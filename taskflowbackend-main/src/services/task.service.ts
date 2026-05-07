@@ -71,3 +71,152 @@ export const deleteTask = async (taskId: string) => {
   if (!task) throw new Error('Task not found');
   return { message: 'Task deleted' };
 };
+
+// ── Composite: Subtareas y Progreso ───────────────────────────────────────────
+
+import { buildTaskTree } from '../structuralpattern/TaskDecorator';
+
+/**
+ * Crea una subtarea vinculada a una tarea padre.
+ */
+export const createSubtask = async (
+  parentTaskId: string,
+  data: Partial<ITask>
+) => {
+  const parent = await Task.findById(parentTaskId);
+  if (!parent) throw new Error('Parent task not found');
+
+  return Task.create({
+    ...data,
+    boardId:      parent.boardId,
+    projectId:    parent.projectId,
+    columnId:     parent.columnId,
+    type:         data.type || parent.type,
+    parentTaskId,
+  });
+};
+
+/**
+ * Retorna el árbol completo de una tarea con el progreso calculado
+ * mediante el patrón Composite.
+ */
+export const getTaskProgress = async (taskId: string) => {
+  // Traer la tarea raíz y todas sus descendientes en una sola consulta
+  const root = await Task.findById(taskId);
+  if (!root) throw new Error('Task not found');
+
+  // Recopilar todos los descendientes recursivamente desde MongoDB
+  const allTasks = await getAllDescendants(taskId, [root]);
+
+  // Construir el árbol Composite y calcular el progreso
+  const tree = buildTaskTree(allTasks, null);
+
+  // La raíz del árbol es el nodo que coincide con taskId
+  const rootNode = tree.find((n) => n.getId() === taskId);
+  if (!rootNode) {
+    // Si no tiene hijos, retornar como Leaf
+    const { LeafTask } = require('.../structuralpattern/TaskDecorator');
+    const leaf = new LeafTask(root);
+    return leaf.toJSON();
+  }
+
+  return rootNode.toJSON();
+};
+
+/**
+ * Recupera recursivamente todos los descendientes de una tarea.
+ */
+async function getAllDescendants(taskId: string, acc: any[]): Promise<any[]> {
+  const children = await Task.find({ parentTaskId: taskId });
+  if (children.length === 0) return acc;
+
+  acc.push(...children);
+  for (const child of children) {
+    await getAllDescendants(child._id.toString(), acc);
+  }
+  return acc;
+}
+
+/**
+ * Retorna las subtareas directas de una tarea.
+ */
+export const getSubtasks = async (parentTaskId: string) => {
+  return Task.find({ parentTaskId });
+};
+
+// ── Decorator: Etiquetas y Adjuntos ───────────────────────────────────────────
+
+import { decorateTask } from '../structuralpattern/TaskDecorator';
+
+/**
+ * Retorna la presentación decorada de una tarea (con badges, cssClasses, etc.)
+ */
+export const getDecoratedTask = async (taskId: string) => {
+  const task = await Task.findById(taskId);
+  if (!task) throw new Error('Task not found');
+  return decorateTask(task);
+};
+
+/**
+ * Agrega una etiqueta de color a una tarea.
+ */
+export const addLabel = async (
+  taskId: string,
+  label: { name: string; color: string }
+) => {
+  const task = await Task.findByIdAndUpdate(
+    taskId,
+    { $push: { labels: label } },
+    { new: true }
+  );
+  if (!task) throw new Error('Task not found');
+  return decorateTask(task);
+};
+
+/**
+ * Elimina una etiqueta de una tarea por nombre.
+ */
+export const removeLabel = async (taskId: string, labelName: string) => {
+  const task = await Task.findByIdAndUpdate(
+    taskId,
+    { $pull: { labels: { name: labelName } } },
+    { new: true }
+  );
+  if (!task) throw new Error('Task not found');
+  return decorateTask(task);
+};
+
+/**
+ * Agrega un adjunto a una tarea (llamado tras subir el archivo con multer).
+ */
+export const addAttachment = async (
+  taskId: string,
+  attachment: {
+    filename:     string;
+    originalName: string;
+    mimetype:     string;
+    size:         number;
+    url:          string;
+  }
+) => {
+  const task = await Task.findByIdAndUpdate(
+    taskId,
+    { $push: { attachments: { ...attachment, uploadedAt: new Date() } } },
+    { new: true }
+  );
+  if (!task) throw new Error('Task not found');
+  return decorateTask(task);
+};
+
+/**
+ * Elimina un adjunto de una tarea por filename.
+ */
+export const removeAttachment = async (taskId: string, filename: string) => {
+  const task = await Task.findByIdAndUpdate(
+    taskId,
+    { $pull: { attachments: { filename } } },
+    { new: true }
+  );
+  if (!task) throw new Error('Task not found');
+  return decorateTask(task);
+};
