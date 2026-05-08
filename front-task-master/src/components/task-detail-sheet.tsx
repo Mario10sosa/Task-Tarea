@@ -1,3 +1,4 @@
+import type { Task } from '@/lib/types';
 import { useState, useEffect, useMemo } from 'react';
 import { useUpdateTask } from '@/hooks/useTasks';
 import { useAuth } from '@/store/useAuth';
