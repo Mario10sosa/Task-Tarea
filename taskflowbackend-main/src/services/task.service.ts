@@ -1,9 +1,12 @@
 import { Task } from '../models/Task';
-import { Board } from '../models/Board';
 import { getTaskCreator } from '../patterns/TaskFactory';
 import { TaskBuilder } from '../patterns/TaskBuilder';
 import { cloneTask } from '../patterns/Prototype';
 import { ITask, TaskType } from '../types';
+import { buildTaskTree, LeafTask } from '../structuralpattern/TaskComposite';
+import { decorateTask } from '../structuralpattern/TaskDecorator';
+
+// ── Creacionales (existentes) ─────────────────────────────────────────────────
 
 export const getTasks = async (boardId: string, filters: any) => {
   return Task.find({ boardId, ...filters });
@@ -24,21 +27,15 @@ export const createTaskWithBuilder = async (
 ) => {
   const resolvedType = (data.type || 'simple') as TaskType;
   const builder = new TaskBuilder();
-  if (data.title) builder.setTitle(data.title);
-  if (data.priority) builder.setPriority(data.priority);
-  if (data.dueDate) builder.setDueDate(data.dueDate);
+  if (data.title)     builder.setTitle(data.title);
+  if (data.priority)  builder.setPriority(data.priority);
+  if (data.dueDate)   builder.setDueDate(data.dueDate);
   if (data.assignedTo) builder.setAssignee(data.assignedTo);
-  if (data.tags) data.tags.forEach((tag) => builder.addTag(tag));
+  if (data.tags)      data.tags.forEach((tag) => builder.addTag(tag));
   if (data.checklist) builder.setChecklist(data.checklist.map((c: any) => c.text || c));
 
   const buildData = builder.build();
-  return Task.create({
-    ...buildData,
-    boardId,
-    projectId,
-    columnId,
-    type: resolvedType,
-  });
+  return Task.create({ ...buildData, boardId, projectId, columnId, type: resolvedType });
 };
 
 export const getTaskDetails = async (taskId: string) => {
@@ -60,7 +57,6 @@ export const moveTask = async (taskId: string, columnId: string) => {
 };
 
 export const cloneTaskService = async (taskId: string, boardId: string, columnId: string) => {
-  // the prototype handles adding '(copia)' to the name
   const newTask = await cloneTask(taskId, boardId, columnId);
   if (!newTask) throw new Error('Failed to clone task');
   return newTask;
@@ -74,15 +70,7 @@ export const deleteTask = async (taskId: string) => {
 
 // ── Composite: Subtareas y Progreso ───────────────────────────────────────────
 
-import { buildTaskTree } from '../structuralpattern/TaskDecorator';
-
-/**
- * Crea una subtarea vinculada a una tarea padre.
- */
-export const createSubtask = async (
-  parentTaskId: string,
-  data: Partial<ITask>
-) => {
+export const createSubtask = async (parentTaskId: string, data: Partial<ITask>) => {
   const parent = await Task.findById(parentTaskId);
   if (!parent) throw new Error('Parent task not found');
 
@@ -96,40 +84,26 @@ export const createSubtask = async (
   });
 };
 
-/**
- * Retorna el árbol completo de una tarea con el progreso calculado
- * mediante el patrón Composite.
- */
 export const getTaskProgress = async (taskId: string) => {
-  // Traer la tarea raíz y todas sus descendientes en una sola consulta
   const root = await Task.findById(taskId);
   if (!root) throw new Error('Task not found');
 
-  // Recopilar todos los descendientes recursivamente desde MongoDB
   const allTasks = await getAllDescendants(taskId, [root]);
-
-  // Construir el árbol Composite y calcular el progreso
-  const tree = buildTaskTree(allTasks, null);
-
-  // La raíz del árbol es el nodo que coincide con taskId
+  const tree     = buildTaskTree(allTasks, null);
   const rootNode = tree.find((n) => n.getId() === taskId);
+
   if (!rootNode) {
-    // Si no tiene hijos, retornar como Leaf
-    const { LeafTask } = require('.../structuralpattern/TaskDecorator');
-    const leaf = new LeafTask(root);
+    // Sin hijos → comportamiento Leaf
+    const leaf = new LeafTask(root as any);
     return leaf.toJSON();
   }
 
   return rootNode.toJSON();
 };
 
-/**
- * Recupera recursivamente todos los descendientes de una tarea.
- */
 async function getAllDescendants(taskId: string, acc: any[]): Promise<any[]> {
   const children = await Task.find({ parentTaskId: taskId });
   if (children.length === 0) return acc;
-
   acc.push(...children);
   for (const child of children) {
     await getAllDescendants(child._id.toString(), acc);
@@ -137,67 +111,33 @@ async function getAllDescendants(taskId: string, acc: any[]): Promise<any[]> {
   return acc;
 }
 
-/**
- * Retorna las subtareas directas de una tarea.
- */
 export const getSubtasks = async (parentTaskId: string) => {
   return Task.find({ parentTaskId });
 };
 
 // ── Decorator: Etiquetas y Adjuntos ───────────────────────────────────────────
 
-import { decorateTask } from '../structuralpattern/TaskDecorator';
-
-/**
- * Retorna la presentación decorada de una tarea (con badges, cssClasses, etc.)
- */
 export const getDecoratedTask = async (taskId: string) => {
   const task = await Task.findById(taskId);
   if (!task) throw new Error('Task not found');
   return decorateTask(task);
 };
 
-/**
- * Agrega una etiqueta de color a una tarea.
- */
-export const addLabel = async (
-  taskId: string,
-  label: { name: string; color: string }
-) => {
-  const task = await Task.findByIdAndUpdate(
-    taskId,
-    { $push: { labels: label } },
-    { new: true }
-  );
+export const addLabel = async (taskId: string, label: { name: string; color: string }) => {
+  const task = await Task.findByIdAndUpdate(taskId, { $push: { labels: label } }, { new: true });
   if (!task) throw new Error('Task not found');
   return decorateTask(task);
 };
 
-/**
- * Elimina una etiqueta de una tarea por nombre.
- */
 export const removeLabel = async (taskId: string, labelName: string) => {
-  const task = await Task.findByIdAndUpdate(
-    taskId,
-    { $pull: { labels: { name: labelName } } },
-    { new: true }
-  );
+  const task = await Task.findByIdAndUpdate(taskId, { $pull: { labels: { name: labelName } } }, { new: true });
   if (!task) throw new Error('Task not found');
   return decorateTask(task);
 };
 
-/**
- * Agrega un adjunto a una tarea (llamado tras subir el archivo con multer).
- */
 export const addAttachment = async (
   taskId: string,
-  attachment: {
-    filename:     string;
-    originalName: string;
-    mimetype:     string;
-    size:         number;
-    url:          string;
-  }
+  attachment: { filename: string; originalName: string; mimetype: string; size: number; url: string }
 ) => {
   const task = await Task.findByIdAndUpdate(
     taskId,
@@ -208,15 +148,8 @@ export const addAttachment = async (
   return decorateTask(task);
 };
 
-/**
- * Elimina un adjunto de una tarea por filename.
- */
 export const removeAttachment = async (taskId: string, filename: string) => {
-  const task = await Task.findByIdAndUpdate(
-    taskId,
-    { $pull: { attachments: { filename } } },
-    { new: true }
-  );
+  const task = await Task.findByIdAndUpdate(taskId, { $pull: { attachments: { filename } } }, { new: true });
   if (!task) throw new Error('Task not found');
   return decorateTask(task);
 };
