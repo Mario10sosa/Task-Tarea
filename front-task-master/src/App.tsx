@@ -8,6 +8,8 @@ import { ProjectDetailsPage } from './pages/ProjectDetails';
 import { InvitationLandingPage } from './pages/InvitationLanding';
 import { InvitationsPage } from './pages/Invitations';
 import { useAuth } from './store/useAuth';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { Toaster } from '@/components/ui/sonner';
 
 const queryClient = new QueryClient();
 
@@ -16,8 +18,13 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   if (!token) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { Toaster } from '@/components/ui/sonner';
+
+function PublicRoute({ children }: { children: React.ReactNode }) {
+  const token = useAuth((state) => state.token);
+  // Si ya tiene sesión activa, redirigir al dashboard
+  if (token) return <Navigate to="/" replace />;
+  return <>{children}</>;
+}
 
 export function App() {
   return (
@@ -26,9 +33,14 @@ export function App() {
         <Toaster position="top-center" expand={false} richColors />
         <BrowserRouter>
           <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
+            {/* Rutas públicas — redirigen al dashboard si ya hay sesión */}
+            <Route path="/login"    element={<PublicRoute><LoginPage /></PublicRoute>} />
+            <Route path="/register" element={<PublicRoute><RegisterPage /></PublicRoute>} />
+
+            {/* Invitación — siempre accesible */}
             <Route path="/invitation/:token" element={<InvitationLandingPage />} />
+
+            {/* Rutas protegidas */}
             <Route
               path="/"
               element={
@@ -39,8 +51,11 @@ export function App() {
             >
               <Route index element={<ProjectsPage />} />
               <Route path="projects/:id" element={<ProjectDetailsPage />} />
-              <Route path="invitations" element={<InvitationsPage />} />
+              <Route path="invitations"  element={<InvitationsPage />} />
             </Route>
+
+            {/* Cualquier ruta desconocida → login */}
+            <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>

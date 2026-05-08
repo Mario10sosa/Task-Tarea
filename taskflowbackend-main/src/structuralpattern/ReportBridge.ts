@@ -9,7 +9,7 @@
  *   Concrete Implementors → PDFExporter, CSVExporter
  */
 
-import PDFDocument from 'pdfkit';
+const PDFDocument = require('pdfkit');
 import { Response } from 'express';
 
 // ── Tipos ──────────────────────────────────────────────────────────────────────
@@ -36,7 +36,8 @@ export class PDFExporter implements ReportExporter {
     const doc = new PDFDocument({ margin: 40, size: 'A4' });
 
     res.setHeader('Content-Type', this.getMimeType());
-    res.setHeader('Content-Disposition', `attachment; filename="${data.title}.pdf"`);
+    const safeName = data.title.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9\-_ ]/g, '').trim();
+    res.setHeader('Content-Disposition', `attachment; filename="${safeName}.pdf"`);
     doc.pipe(res);
 
     // Título
@@ -97,7 +98,8 @@ export class PDFExporter implements ReportExporter {
 export class CSVExporter implements ReportExporter {
   exportReport(data: ReportData, res: Response): void {
     res.setHeader('Content-Type', this.getMimeType());
-    res.setHeader('Content-Disposition', `attachment; filename="${data.title}.csv"`);
+    const safeNameCsv = data.title.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-zA-Z0-9\-_ ]/g, '').trim();
+    res.setHeader('Content-Disposition', `attachment; filename="${safeNameCsv}.csv"`);
 
     if (data.rows.length === 0) { res.send('Sin datos'); return; }
 
