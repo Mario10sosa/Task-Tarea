@@ -47,3 +47,14 @@ export const getInvitations = async (req: AuthenticatedRequest, res: Response) =
     res.status(500).json({ message: error.message });
   }
 };
+
+export const getProjectInvitations = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const projectId = req.params.id as string;
+    const { Invitation } = require('../models/Invitation');
+    const invitations = await Invitation.find({ projectId, status: 'pending' });
+    res.json(invitations);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
+};
