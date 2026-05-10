@@ -7,10 +7,11 @@ import {
   addAttachment, removeAttachment, upload,
 } from '../controllers/task.controller';
 import { protect } from '../middlewares/auth.middleware';
+import { taskProxy } from '../structuralpattern/TaskProxy';
 
 const router = Router({ mergeParams: true });
 
-// Base CRUD
+// Base CRUD — Proxy intercepta create, update, move, delete
 router.get('/',                   protect, getTasks);
 router.get('/board/:id',          protect, getTasks);
 router.post('/',                  protect, createTask);
@@ -38,5 +39,8 @@ router.delete('/:id/labels/:labelName', protect, removeLabel);
 // Decorator — Adjuntos (multer middleware)
 router.post('/:id/attachments',              protect, upload.single('file'), addAttachment);
 router.delete('/:id/attachments/:filename',  protect, removeAttachment);
+
+// Proxy — Log de auditoría
+router.get('/audit/log', protect, (_req, res) => res.json(taskProxy.getAuditLog()));
 
 export default router;

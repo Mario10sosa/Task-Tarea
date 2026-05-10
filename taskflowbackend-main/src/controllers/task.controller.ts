@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import * as taskService from '../services/task.service';
+import { AuthenticatedRequest } from '../middlewares/auth.middleware';
+import { taskProxy } from '../structuralpattern/TaskProxy';
 
 export const getTasks = async (req: Request, res: Response) => {
   try {
@@ -16,11 +18,14 @@ export const getTasks = async (req: Request, res: Response) => {
   }
 };
 
-export const createTask = async (req: Request, res: Response) => {
+export const createTask = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    // ProjectID typically comes from board lookup or body. Assuming it's in body for simplicity or passed via route
+    // Proxy: valida membresía, datos y WIP Limit antes de crear
     const { projectId, columnId, ...taskData } = req.body;
-    const task = await taskService.createTaskWithFactory((req.params.id as string), projectId, columnId, taskData);
+    const task = await taskProxy.createTask(
+      { requesterId: req.user._id.toString(), boardId: req.params.id as string, projectId, columnId },
+      taskData
+    );
     res.status(201).json(task);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
@@ -46,19 +51,27 @@ export const getTask = async (req: Request, res: Response) => {
   }
 };
 
-export const updateTask = async (req: Request, res: Response) => {
+export const updateTask = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const task = await taskService.updateTask((req.params.id as string), req.body);
+    // Proxy: valida acceso a la tarea y datos de entrada
+    const task = await taskProxy.updateTask(
+      { requesterId: req.user._id.toString(), taskId: req.params.id as string },
+      req.body
+    );
     res.json(task);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
   }
 };
 
-export const moveTask = async (req: Request, res: Response) => {
+export const moveTask = async (req: AuthenticatedRequest, res: Response) => {
   try {
+    // Proxy: valida acceso y WIP Limit en columna destino
     const { columnId } = req.body;
-    const task = await taskService.moveTask((req.params.id as string), columnId);
+    const task = await taskProxy.moveTask(
+      { requesterId: req.user._id.toString(), taskId: req.params.id as string },
+      columnId
+    );
     res.json(task);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
@@ -80,9 +93,12 @@ export const cloneTask = async (req: Request, res: Response) => {
   }
 };
 
-export const deleteTask = async (req: Request, res: Response) => {
+export const deleteTask = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const result = await taskService.deleteTask((req.params.id as string));
+    // Proxy: valida acceso antes de eliminar
+    const result = await taskProxy.deleteTask(
+      { requesterId: req.user._id.toString(), taskId: req.params.id as string }
+    );
     res.json(result);
   } catch (error: any) {
     res.status(400).json({ message: error.message });
