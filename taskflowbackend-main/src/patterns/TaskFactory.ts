@@ -1,4 +1,5 @@
 import { ITask, TaskType } from '../types';
+import { TaskFlyweightFactory } from "../structuralpattern/TaskFlyweightFactory";
 
 export abstract class TaskCreator {
   abstract createTask(data: Partial<ITask>): Partial<ITask>;
@@ -32,19 +33,29 @@ class TimedTaskCreator extends TaskCreator {
  */
 class BugTaskCreator extends TaskCreator {
   createTask(data: Partial<ITask>): Partial<ITask> {
+
+    const flyweight =
+      TaskFlyweightFactory.getFlyweight("BUG");
+
     return {
       ...data,
-      type: 'BUG' as TaskType,
-      priority: data.priority ?? 'high',
-      tags: [...(data.tags ?? []), 'bug'],
-      checklist: data.checklist && data.checklist.length > 0
-        ? data.checklist
-        : [
-            { text: 'Reproducir el error', done: false },
-            { text: 'Identificar causa raíz', done: false },
-            { text: 'Aplicar corrección', done: false },
-            { text: 'Verificar en ambiente de pruebas', done: false },
-          ],
+
+      type: "BUG" as TaskType,
+
+      priority:
+        data.priority ??
+        flyweight?.defaultPriority ??
+        "high",
+
+      tags: [
+        ...(data.tags || []),
+        ...((flyweight?.defaultTags as string[]) || []),
+      ],
+
+      checklist:
+        data.checklist && data.checklist.length > 0
+          ? data.checklist
+          : [...((flyweight?.defaultChecklist as any[]) || [])],
     };
   }
 }
@@ -55,12 +66,29 @@ class BugTaskCreator extends TaskCreator {
  */
 class FeatureTaskCreator extends TaskCreator {
   createTask(data: Partial<ITask>): Partial<ITask> {
+
+    const flyweight =
+      TaskFlyweightFactory.getFlyweight("FEATURE");
+
     return {
       ...data,
-      type: 'FEATURE' as TaskType,
-      priority: data.priority ?? 'medium',
-      tags: [...(data.tags ?? []), 'feature'],
-      durationMinutes: data.durationMinutes ?? 120,
+
+      type: "FEATURE" as TaskType,
+
+      priority:
+        data.priority ??
+        flyweight?.defaultPriority ??
+        "medium",
+
+      tags: [
+        ...(data.tags || []),
+        ...((flyweight?.defaultTags as string[]) || []),
+      ],
+
+      durationMinutes:
+        data.durationMinutes ??
+        flyweight?.defaultDuration ??
+        120,
     };
   }
 }
@@ -71,19 +99,29 @@ class FeatureTaskCreator extends TaskCreator {
  */
 class StoryTaskCreator extends TaskCreator {
   createTask(data: Partial<ITask>): Partial<ITask> {
+
+    const flyweight =
+      TaskFlyweightFactory.getFlyweight("STORY");
+
     return {
       ...data,
-      type: 'STORY' as TaskType,
-      priority: data.priority ?? 'medium',
-      tags: [...(data.tags ?? []), 'story'],
-      checklist: data.checklist && data.checklist.length > 0
-        ? data.checklist
-        : [
-            { text: 'Definir criterios de aceptación', done: false },
-            { text: 'Revisión con el equipo', done: false },
-            { text: 'Implementación completada', done: false },
-            { text: 'Pruebas de aceptación aprobadas', done: false },
-          ],
+
+      type: "STORY" as TaskType,
+
+      priority:
+        data.priority ??
+        flyweight?.defaultPriority ??
+        "medium",
+
+      tags: [
+        ...(data.tags || []),
+        ...((flyweight?.defaultTags as string[]) || []),
+      ],
+
+      checklist:
+        data.checklist && data.checklist.length > 0
+          ? data.checklist
+          : [...((flyweight?.defaultChecklist as any[]) || [])],
     };
   }
 }
@@ -94,12 +132,29 @@ class StoryTaskCreator extends TaskCreator {
  */
 class EpicTaskCreator extends TaskCreator {
   createTask(data: Partial<ITask>): Partial<ITask> {
+
+    const flyweight =
+      TaskFlyweightFactory.getFlyweight("EPIC");
+
     return {
       ...data,
-      type: 'EPIC' as TaskType,
-      priority: data.priority ?? 'low',
-      tags: [...(data.tags ?? []), 'epic'],
-      durationMinutes: data.durationMinutes ?? 480,
+
+      type: "EPIC" as TaskType,
+
+      priority:
+        data.priority ??
+        flyweight?.defaultPriority ??
+        "low",
+
+      tags: [
+        ...(data.tags || []),
+        ...((flyweight?.defaultTags as string[]) || []),
+      ],
+
+      durationMinutes:
+        data.durationMinutes ??
+        flyweight?.defaultDuration ??
+        480,
     };
   }
 }

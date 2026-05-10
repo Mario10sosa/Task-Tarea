@@ -70,16 +70,23 @@ export const deleteTask = async (taskId: string) => {
 
 // ── Composite: Subtareas y Progreso ───────────────────────────────────────────
 
-export const createSubtask = async (parentTaskId: string, data: Partial<ITask>) => {
+export const createSubtask = async (
+  parentTaskId: string,
+  data: Partial<ITask>
+) => {
+
   const parent = await Task.findById(parentTaskId);
-  if (!parent) throw new Error('Parent task not found');
+
+  if (!parent) {
+    throw new Error('Parent task not found');
+  }
 
   return Task.create({
     ...data,
-    boardId:      parent.boardId,
-    projectId:    parent.projectId,
-    columnId:     parent.columnId,
-    type:         data.type || parent.type,
+    boardId: parent.boardId,
+    projectId: parent.projectId,
+    columnId: parent.columnId,
+    type: data.type || parent.type,
     parentTaskId,
   });
 };

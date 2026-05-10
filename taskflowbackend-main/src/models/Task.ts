@@ -13,7 +13,7 @@ const taskSchema = new Schema<ITask>(
     },
     title:           { type: String, required: true },
     description:     { type: String },
-    priority:        { type: String, enum: ['low', 'medium', 'high'], default: 'medium' },
+    priority:        { type: String, enum: ['low', 'medium', 'high','urgent'], default: 'medium' },
     assignedTo:      { type: Schema.Types.ObjectId, ref: 'User' },
     dueDate:         { type: Date },
     checklist: [
