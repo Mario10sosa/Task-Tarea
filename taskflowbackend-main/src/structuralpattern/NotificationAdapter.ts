@@ -1,19 +1,4 @@
-/**
- * PATRÓN ADAPTER — Sistema de Notificaciones
- *
- * Problema: Cada canal de notificación (Email, SMS, InApp) tiene su propia API
- * incompatible. El sistema de negocio no debe acoplarse a ninguna API específica.
- *
- * Solución: Definir una interfaz Target (NotificationService) que el resto del
- * sistema usa, y crear un Adapter por cada canal externo que traduce las llamadas
- * al formato que cada API externa entiende.
- *
- * Estructura:
- *   Target          → NotificationService (interfaz unificada)
- *   Adaptee         → EmailAPI, SMSAPI, InAppAPI (clases con APIs propias)
- *   Adapter         → EmailAdapter, SMSAdapter, InAppAdapter
- *   Client          → invitation.service, task.service (usan solo Target)
- */
+
 
 // ── Target Interface ───────────────────────────────────────────────────────────
 

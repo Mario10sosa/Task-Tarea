@@ -1,20 +1,4 @@
-/**
- * PATRÓN DECORATOR — Decoración de Tareas con Etiquetas y Adjuntos
- *
- * Problema: Una tarea puede mostrarse de muchas formas según el contexto:
- * con etiquetas de color, con archivos adjuntos, con indicador de vencimiento,
- * con prioridad destacada, etc. Usar herencia generaría una explosión de
- * subclases (TaskConEtiqueta, TaskConAdjunto, TaskConEtiquetaYAdjunto...).
- *
- * Solución: Envolver dinámicamente la tarea base con Decorators que agregan
- * responsabilidades en tiempo de ejecución, sin modificar la clase original.
- *
- * Estructura:
- *   Component          → TaskPresenter (interfaz)
- *   Concrete Component → BaseTaskPresenter (presentación base)
- *   Base Decorator     → TaskDecorator (delega al componente envuelto)
- *   Concrete Decorators→ LabelDecorator, AttachmentDecorator, DueDateDecorator, PriorityDecorator
- */
+
 
 // ── Tipos de datos ─────────────────────────────────────────────────────────────
 

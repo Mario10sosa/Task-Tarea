@@ -5,6 +5,7 @@ import { cloneTask } from '../patterns/Prototype';
 import { ITask, TaskType } from '../types';
 import { buildTaskTree, LeafTask } from '../structuralpattern/TaskComposite';
 import { decorateTask } from '../structuralpattern/TaskDecorator';
+import { LabelFlyweightFactory, TaskLabelContext } from '../structuralpattern/LabelFlyweight';
 
 // ── Creacionales (existentes) ─────────────────────────────────────────────────
 
@@ -70,16 +71,23 @@ export const deleteTask = async (taskId: string) => {
 
 // ── Composite: Subtareas y Progreso ───────────────────────────────────────────
 
-export const createSubtask = async (parentTaskId: string, data: Partial<ITask>) => {
+export const createSubtask = async (
+  parentTaskId: string,
+  data: Partial<ITask>
+) => {
+
   const parent = await Task.findById(parentTaskId);
-  if (!parent) throw new Error('Parent task not found');
+
+  if (!parent) {
+    throw new Error('Parent task not found');
+  }
 
   return Task.create({
     ...data,
-    boardId:      parent.boardId,
-    projectId:    parent.projectId,
-    columnId:     parent.columnId,
-    type:         data.type || parent.type,
+    boardId: parent.boardId,
+    projectId: parent.projectId,
+    columnId: parent.columnId,
+    type: data.type || parent.type,
     parentTaskId,
   });
 };
@@ -124,7 +132,16 @@ export const getDecoratedTask = async (taskId: string) => {
 };
 
 export const addLabel = async (taskId: string, label: { name: string; color: string }) => {
-  const task = await Task.findByIdAndUpdate(taskId, { $push: { labels: label } }, { new: true });
+  // Flyweight: obtener del pool compartido en lugar de crear un objeto nuevo.
+  // Si 100 tareas usan {name:'bug', color:'#ef4444'}, todas comparten la misma instancia.
+  const context    = new TaskLabelContext(taskId, label.name, label.color);
+  const normalized = context.toLabel(); // nombre y color normalizados desde el Flyweight
+
+  const task = await Task.findByIdAndUpdate(
+    taskId,
+    { $push: { labels: normalized } },
+    { new: true }
+  );
   if (!task) throw new Error('Task not found');
   return decorateTask(task);
 };

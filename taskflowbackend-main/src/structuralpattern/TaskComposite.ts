@@ -1,21 +1,4 @@
-/**
- * PATRÓN COMPOSITE — Tareas y Subtareas con Progreso Unificado
- *
- * Problema: Una tarea puede tener subtareas, y cada subtarea puede tener
- * sus propias sub-subtareas. Calcular el progreso de forma uniforme
- * (tanto para una tarea hoja como para un árbol completo) requeriría
- * lógica condicional dispersa en todo el código.
- *
- * Solución: Tratar tareas individuales (Leaf) y grupos de tareas (Composite)
- * de forma uniforme a través de la interfaz Component. El cliente llama
- * siempre a getProgress() sin importar si es un Leaf o un árbol completo.
- *
- * Estructura:
- *   Component  → TaskComponent (interfaz unificada)
- *   Leaf       → LeafTask      (tarea sin hijos)
- *   Composite  → CompositeTask (tarea con subtareas)
- *   Client     → task.service  (usa solo TaskComponent)
- */
+
 
 // ── Component Interface ────────────────────────────────────────────────────────
 

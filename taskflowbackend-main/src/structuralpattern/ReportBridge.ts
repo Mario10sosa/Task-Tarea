@@ -1,13 +1,4 @@
-/**
- * PATRÓN BRIDGE — Generación de Reportes
- * Abstraction (QUÉ reportar) desacoplado del Implementor (CÓMO exportar).
- *
- * Estructura:
- *   Abstraction           → ReportGenerator
- *   Refined Abstractions  → ProjectReportGenerator, TaskReportGenerator
- *   Implementor           → ReportExporter (interfaz)
- *   Concrete Implementors → PDFExporter, CSVExporter
- */
+
 
 const PDFDocument = require('pdfkit');
 import { Response } from 'express';
