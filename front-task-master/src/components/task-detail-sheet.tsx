@@ -37,6 +37,7 @@ import {
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SubtaskProgress } from '@/components/subtask-progress';
 import { TaskDecorations } from '@/components/task-decorations';
+import { UndoRedoBar } from '@/components/undo-redo-bar';
 
 interface TaskDetailSheetProps {
   task: Task | null;
@@ -252,6 +253,8 @@ export function TaskDetailSheet({
             <TaskDecorations taskId={task._id} />
 
             <Separator className="bg-border/40" />
+
+            <UndoRedoBar taskId={task._id} />
 
             {/* Properties Grid */}
             <div className="grid grid-cols-2 gap-x-8 gap-y-6">

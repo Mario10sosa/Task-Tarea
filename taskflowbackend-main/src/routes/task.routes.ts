@@ -44,3 +44,12 @@ router.delete('/:id/attachments/:filename',  protect, removeAttachment);
 router.get('/audit/log', protect, (_req, res) => res.json(taskProxy.getAuditLog()));
 
 export default router;
+// ── Command Pattern — Undo/Redo ────────────────────────────────────────────────
+import {
+  executeCommand, undoCommand, redoCommand, getCommandHistory
+} from '../controllers/command.controller';
+
+router.post('/:id/commands', protect, executeCommand);  // ejecutar comando
+router.post('/:id/undo',     protect, undoCommand);     // deshacer (RF-06.2)
+router.post('/:id/redo',     protect, redoCommand);     // rehacer
+router.get('/:id/history',   protect, getCommandHistory); // historial (RF-06.1)
