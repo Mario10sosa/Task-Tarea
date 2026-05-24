@@ -61,3 +61,7 @@ router.get('/:id/events',         protect, (req, res) => res.json(AuditLogObserv
 import { getTransitions, transitionTask } from '../controllers/task.controller';
 router.get('/:id/transitions', protect, getTransitions);  // estados permitidos
 router.post('/:id/transition', protect, transitionTask);  // transicionar con validación
+// ── Strategy Pattern — Ordenamiento de tareas ──────────────────────────────────
+import { getSortedTasks, getAvailableStrategies } from '../controllers/strategy.controller';
+router.get('/sort/strategies', protect, getAvailableStrategies); // listar estrategias
+router.get('/sort',            protect, getSortedTasks);          // ordenar con estrategia

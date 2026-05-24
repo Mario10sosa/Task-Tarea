@@ -45,8 +45,13 @@ export function useMarkAsRead() {
       const { data } = await api.patch(`/notifications/${notificationId}/read`);
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+    onSuccess: (_data, notificationId) => {
+      // Actualiza solo el campo read en el cache — la notificación NO desaparece
+      queryClient.setQueryData<Notification[]>(['notifications'], (old = []) =>
+        old.map(n => n._id === notificationId ? { ...n, read: true } : n)
+      );
+      // Actualiza el contador de no leídas
+      queryClient.invalidateQueries({ queryKey: ['notifications', 'unread-count'] });
     },
   });
 }

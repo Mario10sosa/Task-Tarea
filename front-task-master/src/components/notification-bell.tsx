@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Bell, Check, CheckCheck, Trash2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -131,22 +131,24 @@ function NotificationPanel({ onClose }: { onClose: () => void }) {
 
       <Separator />
 
-      {/* Lista */}
-      <ScrollArea className="max-h-96">
-        {isLoading ? (
-          <div className="p-6 text-center text-sm text-muted-foreground">Cargando...</div>
-        ) : notifications.length === 0 ? (
-          <div className="p-8 text-center">
-            <Bell className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
-            <p className="text-sm text-muted-foreground">Sin notificaciones</p>
-          </div>
-        ) : (
-          <div className="p-2 flex flex-col gap-0.5">
-            {notifications.map((n) => (
-              <NotificationItem key={n._id} notification={n} />
-            ))}
-          </div>
-        )}
+      {/* Lista con scroll */}
+      <ScrollArea className="h-80">
+        <div className="p-2">
+          {isLoading ? (
+            <div className="p-6 text-center text-sm text-muted-foreground">Cargando...</div>
+          ) : notifications.length === 0 ? (
+            <div className="p-8 text-center">
+              <Bell className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
+              <p className="text-sm text-muted-foreground">Sin notificaciones</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-0.5">
+              {notifications.map((n) => (
+                <NotificationItem key={n._id} notification={n} />
+              ))}
+            </div>
+          )}
+        </div>
       </ScrollArea>
     </div>
   );
@@ -158,9 +160,22 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const { data: unreadData } = useUnreadCount();
   const unreadCount = unreadData?.unreadCount ?? 0;
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Cerrar al hacer click fuera del componente
+  useEffect(() => {
+    if (!open) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
 
   return (
-    <div className="relative">
+    <div className="relative" ref={ref}>
       <Button
         variant="ghost"
         size="icon"
