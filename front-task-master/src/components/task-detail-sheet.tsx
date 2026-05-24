@@ -296,7 +296,19 @@ export function TaskDetailSheet({
                 <Label className="text-xs text-muted-foreground flex items-center gap-2">
                   <Layout className="w-3.5 h-3.5" /> Estado
                 </Label>
-                <Select value={columnId} onValueChange={(v) => { setColumnId(v); handleUpdate({ columnId: v }); }}>
+                {/* State Pattern: valida la transición antes de persistir */}
+                <Select
+                  value={columnId}
+                  onValueChange={async (targetId) => {
+                    try {
+                      const { api } = await import('@/lib/api');
+                      await api.post(`/tasks/${task._id}/transition`, { targetColumnId: targetId });
+                      setColumnId(targetId);
+                    } catch (err: any) {
+                      alert(`Transición no permitida: ${err.response?.data?.message || err.message}`);
+                    }
+                  }}
+                >
                   <SelectTrigger className="h-10 bg-muted/20 border-border/50 font-bold text-primary">
                     <SelectValue />
                   </SelectTrigger>

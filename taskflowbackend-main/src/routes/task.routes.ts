@@ -57,3 +57,7 @@ router.get('/:id/history',   protect, getCommandHistory); // historial (RF-06.1)
 import { AuditLogObserver } from '../behaviorpatterns/TaskObserver';
 router.get('/events/log',         protect, (_req, res) => res.json(AuditLogObserver.getLog()));
 router.get('/:id/events',         protect, (req, res) => res.json(AuditLogObserver.getLogByTask(req.params.id as string)));
+// ── State Pattern — Ciclo de vida de la tarea ──────────────────────────────────
+import { getTransitions, transitionTask } from '../controllers/task.controller';
+router.get('/:id/transitions', protect, getTransitions);  // estados permitidos
+router.post('/:id/transition', protect, transitionTask);  // transicionar con validación

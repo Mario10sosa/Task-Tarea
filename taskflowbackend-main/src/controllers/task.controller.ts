@@ -227,3 +227,46 @@ export const removeAttachment = async (req: Request, res: Response) => {
     res.status(400).json({ message: error.message });
   }
 };
+// ── State Pattern ──────────────────────────────────────────────────────────────
+import { TaskStateContext } from '../behaviorpatterns/TaskState';
+
+/**
+ * GET /api/tasks/:id/transitions
+ * Estado actual de la tarea y transiciones permitidas.
+ */
+export const getTransitions = async (req: Request, res: Response) => {
+  try {
+    const task = await taskService.getTaskDetails(req.params.id as string);
+    const ctx  = new TaskStateContext(task.columnId);
+    res.json({ taskId: task._id, title: task.title, ...ctx.getStateInfo() });
+  } catch (error: any) {
+    res.status(404).json({ message: error.message });
+  }
+};
+
+/**
+ * POST /api/tasks/:id/transition
+ * Body: { targetColumnId: string }
+ * Transiciona la tarea al nuevo estado si la transición es válida.
+ */
+export const transitionTask = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const { targetColumnId } = req.body;
+    if (!targetColumnId)
+      return res.status(400).json({ message: 'targetColumnId es requerido' });
+
+    const task = await taskService.getTaskDetails(req.params.id as string);
+    const ctx  = new TaskStateContext(task.columnId);
+    const newColumnId = ctx.transition(targetColumnId); // lanza si no permitida
+
+    // Pasa por el Proxy para auditoría
+    const updated = await taskProxy.moveTask(
+      { requesterId: req.user._id.toString(), taskId: req.params.id as string },
+      newColumnId
+    );
+
+    res.json({ task: updated, stateInfo: ctx.getStateInfo() });
+  } catch (error: any) {
+    res.status(400).json({ message: error.message });
+  }
+};
