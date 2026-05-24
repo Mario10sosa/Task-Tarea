@@ -5,6 +5,8 @@ import { useAuth } from '@/store/useAuth';
 import {
   Sheet,
   SheetContent,
+  SheetTitle,
+  SheetDescription,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -141,6 +143,8 @@ export function TaskDetailSheet({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-xl w-full p-0 flex flex-col gap-0 border-l shadow-2xl overflow-hidden h-full">
+          <SheetTitle className="sr-only">Detalle de Tarea</SheetTitle>
+          <SheetDescription className="sr-only">Panel de edición y detalles de la tarea seleccionada</SheetDescription>
         <ScrollArea className="flex-1 min-h-0">
           <div className="p-8 space-y-8">
             {/* Header Section */}
@@ -180,7 +184,6 @@ export function TaskDetailSheet({
 
             {/* Main Content Grid */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-              {/* Left Column: Description & Checklist */}
               <div className="md:col-span-12 space-y-8">
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-foreground font-bold text-sm">
@@ -252,9 +255,16 @@ export function TaskDetailSheet({
             <SubtaskProgress taskId={task._id} />
             <TaskDecorations taskId={task._id} />
 
-            <Separator className="bg-border/40" />
+            {/* Command Pattern — Undo/Redo (RF-06.2) */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-foreground font-bold text-sm">
+                <Clock className="w-4 h-4 text-primary" />
+                Historial de cambios
+              </div>
+              <UndoRedoBar taskId={task._id} />
+            </div>
 
-            <UndoRedoBar taskId={task._id} />
+            <Separator className="bg-border/40" />
 
             {/* Properties Grid */}
             <div className="grid grid-cols-2 gap-x-8 gap-y-6">
@@ -292,7 +302,7 @@ export function TaskDetailSheet({
                   </SelectTrigger>
                   <SelectContent>
                     {columns.map(c => (
-                      <SelectItem key={c._id} value={c._id}>
+                      <SelectItem key={c._id || c.id} value={c.id || c._id}>
                         {c.name}
                       </SelectItem>
                     ))}

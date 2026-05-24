@@ -25,7 +25,7 @@ export const getProjectDetails = async (projectId: string) => {
 };
 
 export const updateProject = async (projectId: string, updates: Partial<{ name: string; description: string }>) => {
-  const project = await Project.findByIdAndUpdate(projectId, updates, { new: true });
+  const project = await Project.findByIdAndUpdate(projectId, updates, { returnDocument: 'after' });
   if (!project) throw new Error('Project not found');
   return project;
 };

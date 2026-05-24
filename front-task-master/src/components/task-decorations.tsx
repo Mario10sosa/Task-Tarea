@@ -119,9 +119,9 @@ function LabelsSection({ taskId, labels }: { taskId: string; labels: TaskLabel[]
         {labels.length === 0 && !adding && (
           <p className="text-xs text-muted-foreground">Sin etiquetas</p>
         )}
-        {labels.map((label) => (
+        {labels.map((label, idx) => (
           <Badge
-            key={label.name}
+            key={`${label.name}-${label.color}-${idx}`}
             className="group gap-1 pr-1 text-white text-xs"
             style={{ backgroundColor: label.color }}
           >

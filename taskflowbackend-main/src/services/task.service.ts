@@ -46,13 +46,13 @@ export const getTaskDetails = async (taskId: string) => {
 };
 
 export const updateTask = async (taskId: string, updates: Partial<ITask>) => {
-  const task = await Task.findByIdAndUpdate(taskId, updates, { new: true });
+  const task = await Task.findByIdAndUpdate(taskId, updates, { returnDocument: 'after' });
   if (!task) throw new Error('Task not found');
   return task;
 };
 
 export const moveTask = async (taskId: string, columnId: string) => {
-  const task = await Task.findByIdAndUpdate(taskId, { columnId }, { new: true });
+  const task = await Task.findByIdAndUpdate(taskId, { columnId }, { returnDocument: 'after' });
   if (!task) throw new Error('Task not found');
   return task;
 };
@@ -147,7 +147,7 @@ export const addLabel = async (taskId: string, label: { name: string; color: str
 };
 
 export const removeLabel = async (taskId: string, labelName: string) => {
-  const task = await Task.findByIdAndUpdate(taskId, { $pull: { labels: { name: labelName } } }, { new: true });
+  const task = await Task.findByIdAndUpdate(taskId, { $pull: { labels: { name: labelName } } }, { returnDocument: 'after' });
   if (!task) throw new Error('Task not found');
   return decorateTask(task);
 };
@@ -159,14 +159,14 @@ export const addAttachment = async (
   const task = await Task.findByIdAndUpdate(
     taskId,
     { $push: { attachments: { ...attachment, uploadedAt: new Date() } } },
-    { new: true }
+    { returnDocument: 'after' }
   );
   if (!task) throw new Error('Task not found');
   return decorateTask(task);
 };
 
 export const removeAttachment = async (taskId: string, filename: string) => {
-  const task = await Task.findByIdAndUpdate(taskId, { $pull: { attachments: { filename } } }, { new: true });
+  const task = await Task.findByIdAndUpdate(taskId, { $pull: { attachments: { filename } } }, { returnDocument: 'after' });
   if (!task) throw new Error('Task not found');
   return decorateTask(task);
 };

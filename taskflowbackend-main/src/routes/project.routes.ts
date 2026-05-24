@@ -5,6 +5,7 @@ import {
   getProjectDashboard, archiveProject,
 } from '../controllers/project.controller';
 import { generateProjectReport } from '../controllers/report.controller';
+import { iterateTasks } from '../controllers/iterator.controller';
 import { protect }               from '../middlewares/auth.middleware';
 //import { requireProjectRole }    from '../middlewares/permissions';
 import { buildProjectChain, buildFullChain } from '../behaviorpatterns/RequestValidationChain';
@@ -31,5 +32,8 @@ router.get('/:id/dashboard',
 
 router.get('/:id/report',
   buildFullChain(['admin', 'member'], 10), generateProjectReport);
+
+// Iterator — recorrer tareas del proyecto con distintos criterios
+router.get('/:id/iterate', buildProjectChain(['admin', 'member']), iterateTasks);
 
 export default router;
