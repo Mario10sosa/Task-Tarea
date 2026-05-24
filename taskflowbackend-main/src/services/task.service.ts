@@ -6,6 +6,7 @@ import { ITask, TaskType } from '../types';
 import { buildTaskTree, LeafTask } from '../structuralpattern/TaskComposite';
 import { decorateTask } from '../structuralpattern/TaskDecorator';
 import { LabelFlyweightFactory, TaskLabelContext } from '../structuralpattern/LabelFlyweight';
+import { TaskEventEmitter } from '../behaviorpatterns/TaskObserver';
 
 // ── Creacionales (existentes) ─────────────────────────────────────────────────
 
@@ -13,11 +14,25 @@ export const getTasks = async (boardId: string, filters: any) => {
   return Task.find({ boardId, ...filters });
 };
 
-export const createTaskWithFactory = async (boardId: string, projectId: string, columnId: string, data: Partial<ITask>) => {
+export const createTaskWithFactory = async (boardId: string, projectId: string, columnId: string, data: Partial<ITask>, actorId?: string) => {
   const resolvedType = (data.type || 'simple') as TaskType;
   const creator = getTaskCreator(resolvedType);
   const taskData = creator.createTask({ ...data, type: resolvedType });
-  return Task.create({ ...taskData, boardId, projectId, columnId });
+  const task = await Task.create({ ...taskData, boardId, projectId, columnId });
+
+  // Observer: emitir evento de creación
+  await TaskEventEmitter.getInstance().notify({
+    type:      'task:created',
+    taskId:    task._id.toString(),
+    taskTitle: task.title,
+    projectId,
+    boardId,
+    actorId,
+    payload:   { type: resolvedType, columnId },
+    timestamp: new Date(),
+  });
+
+  return task;
 };
 
 export const createTaskWithBuilder = async (
@@ -45,15 +60,44 @@ export const getTaskDetails = async (taskId: string) => {
   return task;
 };
 
-export const updateTask = async (taskId: string, updates: Partial<ITask>) => {
+export const updateTask = async (taskId: string, updates: Partial<ITask>, actorId?: string) => {
   const task = await Task.findByIdAndUpdate(taskId, updates, { returnDocument: 'after' });
   if (!task) throw new Error('Task not found');
+
+  // Observer: emitir evento de actualización
+  await TaskEventEmitter.getInstance().notify({
+    type:      'task:updated',
+    taskId:    task._id.toString(),
+    taskTitle: task.title,
+    projectId: task.projectId?.toString(),
+    actorId,
+    payload:   { updates: Object.keys(updates), assigneeId: (task as any).assignedTo?.toString() },
+    timestamp: new Date(),
+  });
+
   return task;
 };
 
-export const moveTask = async (taskId: string, columnId: string) => {
+export const moveTask = async (taskId: string, columnId: string, actorId?: string) => {
+  const original = await Task.findById(taskId);
   const task = await Task.findByIdAndUpdate(taskId, { columnId }, { returnDocument: 'after' });
   if (!task) throw new Error('Task not found');
+
+  // Observer: emitir evento de movimiento
+  await TaskEventEmitter.getInstance().notify({
+    type:      'task:moved',
+    taskId:    task._id.toString(),
+    taskTitle: task.title,
+    projectId: task.projectId?.toString(),
+    actorId,
+    payload: {
+      from:       original?.columnId,
+      to:         columnId,
+      assigneeId: (task as any).assignedTo?.toString(),
+    },
+    timestamp: new Date(),
+  });
+
   return task;
 };
 

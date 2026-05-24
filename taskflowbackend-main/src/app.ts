@@ -3,12 +3,16 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { Database } from './config/database';
 import apiRoutes from './routes';
+import { setupTaskObservers } from './behaviorpatterns/TaskObserver';
 import { apiReference } from '@scalar/express-api-reference';
 import openapiDocument from './docs/openapi.json';
 
 dotenv.config();
 
 const app = express();
+
+// Observer: inicializar observers de tareas al arrancar
+setupTaskObservers();
 
 app.use(cors());
 app.use(express.json());

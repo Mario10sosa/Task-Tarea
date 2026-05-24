@@ -53,3 +53,7 @@ router.post('/:id/commands', protect, executeCommand);  // ejecutar comando
 router.post('/:id/undo',     protect, undoCommand);     // deshacer (RF-06.2)
 router.post('/:id/redo',     protect, redoCommand);     // rehacer
 router.get('/:id/history',   protect, getCommandHistory); // historial (RF-06.1)
+// Observer — Audit log de eventos
+import { AuditLogObserver } from '../behaviorpatterns/TaskObserver';
+router.get('/events/log',         protect, (_req, res) => res.json(AuditLogObserver.getLog()));
+router.get('/:id/events',         protect, (req, res) => res.json(AuditLogObserver.getLogByTask(req.params.id as string)));
