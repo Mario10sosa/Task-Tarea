@@ -133,14 +133,21 @@ export const getDecoratedTask = async (taskId: string) => {
 
 export const addLabel = async (taskId: string, label: { name: string; color: string }) => {
   // Flyweight: obtener del pool compartido en lugar de crear un objeto nuevo.
-  // Si 100 tareas usan {name:'bug', color:'#ef4444'}, todas comparten la misma instancia.
   const context    = new TaskLabelContext(taskId, label.name, label.color);
   const normalized = context.toLabel(); // nombre y color normalizados desde el Flyweight
+
+  // Verificar si la etiqueta ya existe para evitar duplicados
+  const existing = await Task.findOne({
+    _id: taskId,
+    'labels.name': normalized.name,
+    'labels.color': normalized.color,
+  });
+  if (existing) throw new Error('Esta etiqueta ya existe en la tarea');
 
   const task = await Task.findByIdAndUpdate(
     taskId,
     { $push: { labels: normalized } },
-    { new: true }
+    { returnDocument: 'after' }
   );
   if (!task) throw new Error('Task not found');
   return decorateTask(task);

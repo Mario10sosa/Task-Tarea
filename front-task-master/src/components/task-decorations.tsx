@@ -34,8 +34,14 @@ function useAddLabel(taskId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (label: TaskLabel) => api.post(`/tasks/${taskId}/labels`, label),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['task-decorated', taskId] }); toast.success('Etiqueta agregada'); },
-    onError:   () => toast.error('Error al agregar etiqueta'),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['task-decorated', taskId] });
+      toast.success('Etiqueta agregada');
+    },
+    onError: (error: any) => {
+      const msg = error?.response?.data?.message || 'Error al agregar etiqueta';
+      toast.error(msg);
+    },
   });
 }
 
@@ -98,9 +104,23 @@ function LabelsSection({ taskId, labels }: { taskId: string; labels: TaskLabel[]
   const removeLabel = useRemoveLabel(taskId);
 
   const handleAdd = () => {
-    if (!newName.trim()) return;
-    addLabel.mutate({ name: newName.trim(), color: newColor });
-    setNewName(''); setAdding(false);
+    if (!newName.trim() || addLabel.isPending) return;
+    // Verificar duplicado en el frontend antes de llamar al API
+    const alreadyExists = labels.some(
+      l => l.name.toLowerCase() === newName.trim().toLowerCase()
+    );
+    if (alreadyExists) {
+      toast.error('Esta etiqueta ya existe en la tarea');
+      setNewName('');
+      return;
+    }
+    addLabel.mutate(
+      { name: newName.trim(), color: newColor },
+      {
+        onSuccess: () => { setNewName(''); setAdding(false); },
+        onError:   () => { setNewName(''); },
+      }
+    );
   };
 
   return (

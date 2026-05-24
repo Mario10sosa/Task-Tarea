@@ -1,5 +1,3 @@
-
-
 // ── Tipos de datos ─────────────────────────────────────────────────────────────
 
 export interface TaskLabel {
@@ -240,22 +238,37 @@ export class PriorityDecorator extends TaskDecorator {
 export function decorateTask(task: any): TaskPresentation {
   let presenter: TaskPresenter = new BaseTaskPresenter(task);
 
-  // Decorar con etiquetas si las tiene
+  /**
+   * CORRECCIÓN CONCEPTUAL: El patrón Decorator aplica capas en orden LIFO.
+   * El primer Decorator aplicado queda más interno (se ejecuta primero).
+   * El último Decorator aplicado queda más externo (se ejecuta último).
+   *
+   * Orden de decoración (de adentro hacia afuera):
+   *   Base → Label → Attachment → DueDate → Priority
+   *
+   * Orden de "desdecoración" / evaluación (de afuera hacia adentro):
+   *   Priority → DueDate → Attachment → Label → Base
+   *
+   * Esto significa que PriorityDecorator tiene la palabra final sobre
+   * los badges y cssClasses, y es el primero en ser evaluado.
+   */
+
+  // Capa 1 (más interna): etiquetas
   if (task.labels && task.labels.length > 0) {
     presenter = new LabelDecorator(presenter, task.labels);
   }
 
-  // Decorar con adjuntos si los tiene
+  // Capa 2: adjuntos
   if (task.attachments && task.attachments.length > 0) {
     presenter = new AttachmentDecorator(presenter, task.attachments);
   }
 
-  // Decorar con fecha de vencimiento si existe
+  // Capa 3: fecha de vencimiento
   if (task.dueDate) {
     presenter = new DueDateDecorator(presenter, task.dueDate);
   }
 
-  // Decorar con prioridad alta
+  // Capa 4 (más externa, primera en evaluarse): prioridad
   if (task.priority === 'high') {
     presenter = new PriorityDecorator(presenter);
   }
