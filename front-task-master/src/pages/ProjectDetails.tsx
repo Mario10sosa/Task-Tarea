@@ -7,12 +7,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PlusIcon, GripVertical, MoreVertical, Trash2, Edit2, Copy, AlertCircle, Box, Bookmark, Clock } from 'lucide-react';
-import type { Task, Column } from '@/lib/types';
+import { PlusIcon, GripVertical, MoreVertical, Trash2, Edit2, Copy, AlertCircle, Box, Bookmark, Clock } from 'lucide-react';import type { Task, Column } from '@/lib/types';
 import { CreateBoardDialog } from '@/components/create-board-dialog';
 import { CreateTaskDialog } from '@/components/create-task-dialog';
 import { ProjectSettingsDialog } from '@/components/project-settings-dialog';
-import { EditTaskDialog } from '@/components/edit-task-dialog';
+
 import { InviteUserDialog } from '@/components/invite-user-dialog';
 import { AdvancedTaskDialog } from '@/components/advanced-task-dialog';
 import { MemberManagementDialog } from '@/components/member-management-dialog';
@@ -31,6 +30,9 @@ import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
 import type { DropResult } from '@hello-pangea/dnd';
 import { ReportDownloadButton } from '@/components/report-download-button';
 import { ProjectDashboard } from '@/components/project-dashboard';
+import { TaskIteratorView } from '@/components/task-iterator-view';
+import { TaskSortStrategy } from '@/components/task-sort-strategy';
+import { TaskEventFeed } from '@/components/task-event-feed';
 
 export function ProjectDetailsPage() {
   const { id: projectId } = useParams();
@@ -98,6 +100,15 @@ export function ProjectDetailsPage() {
                   {board.name}
                 </TabsTrigger>
               ))}
+              <TabsTrigger value="sort" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                Ordenar
+              </TabsTrigger>
+              <TabsTrigger value="iterate" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                Iterar
+              </TabsTrigger>
+              <TabsTrigger value="activity" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                Actividad
+              </TabsTrigger>
             </TabsList>
             <div className="flex gap-2">
               <CreateBoardDialog projectId={projectId || ''}>
@@ -113,7 +124,7 @@ export function ProjectDetailsPage() {
              <TabsContent
                key={board._id}
                value={board._id}
-               className="flex-1 mt-4 outline-none"
+               className="flex-1 mt-4 outline-none h-full"
              >
                <BoardView 
                  boardId={board._id} 
@@ -125,6 +136,29 @@ export function ProjectDetailsPage() {
           ))}
           <TabsContent value="dashboard" className="flex-1 mt-4 outline-none">
             <ProjectDashboard projectId={project._id} />
+          </TabsContent>
+
+          {/* Strategy — Ordenamiento de tareas */}
+          <TabsContent value="sort" className="flex-1 mt-4 outline-none">
+            <div className="flex flex-col gap-4 p-2">
+              <div className="flex items-center gap-3">
+                <h2 className="text-sm font-semibold text-foreground/80">Ordenar tareas del proyecto</h2>
+                <TaskSortStrategy projectId={project._id} />
+              </div>
+            </div>
+          </TabsContent>
+
+          {/* Iterator — Recorrer colecciones */}
+          <TabsContent value="iterate" className="flex-1 mt-4 outline-none">
+            <TaskIteratorView projectId={project._id} />
+          </TabsContent>
+
+          {/* Observer — Feed de actividad del proyecto */}
+          <TabsContent value="activity" className="flex-1 mt-4 outline-none">
+            <div className="p-2">
+              <h2 className="text-sm font-semibold text-foreground/80 mb-4">Actividad del proyecto</h2>
+              <TaskEventFeed />
+            </div>
           </TabsContent>
         </Tabs>
       ) : (
@@ -207,7 +241,7 @@ function BoardView({
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-      <div className="flex gap-4 h-full overflow-x-auto pb-6 scrollbar-thin scrollbar-thumb-muted-foreground/10 scrollbar-track-transparent">
+      <div className="flex gap-3 overflow-x-auto pb-2 h-[calc(100vh-260px)] scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
         {columns.map((column) => {
           const columnId = column.id || column.name;
           const columnTasks = localTasks.filter((t) => t.columnId === columnId);
@@ -218,12 +252,11 @@ function BoardView({
                 <div
                   {...provided.droppableProps}
                   ref={provided.innerRef}
-                  className={`flex flex-col w-[350px] shrink-0 bg-muted/40 border-r border-border/20 p-4 transition-all duration-200 ${
-                    snapshot.isDraggingOver ? 'bg-muted/60 ring-1 ring-primary/10' : ''
+                  className={`flex flex-col w-[280px] min-w-[280px] shrink-0 rounded-xl bg-muted/30 border border-border/40 transition-all duration-200 ${
+                    snapshot.isDraggingOver ? 'bg-primary/5 border-primary/20' : ''
                   }`}
-                  style={{ minHeight: 'calc(100vh - 250px)' }}
                 >
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between px-4 pt-3 pb-2 shrink-0">
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold text-sm text-foreground/80 tracking-tight">{column.name}</h3>
                       <Badge variant="secondary" className="px-1.5 h-4.5 text-[10px] bg-muted/80 text-muted-foreground">
@@ -232,7 +265,7 @@ function BoardView({
                     </div>
                   </div>
 
-                  <div className="flex flex-col gap-3.5 flex-1 overflow-y-auto px-3 py-1 scrollbar-thin scrollbar-thumb-muted-foreground/10">
+                  <div className="flex flex-col gap-3 flex-1 overflow-y-auto min-h-0 px-3 pb-3 scrollbar-thin scrollbar-thumb-muted-foreground/10 scrollbar-track-transparent">
                     {columnTasks.map((task, index) => (
                       <Draggable key={task._id} draggableId={task._id} index={index}>
                         {(provided, snapshot) => (
@@ -317,7 +350,6 @@ function TaskCard({
   const updateTask = useUpdateTask();
   const deleteTask = useDeleteTask();
   const cloneTask = useCloneTask();
-  const [isEditOpen, setIsEditOpen] = useState(false);
 
   const handleMove = (newColumn: string) => {
     moveTask.mutate({ taskId: task._id, columnId: newColumn, boardId });
@@ -426,7 +458,7 @@ function TaskCard({
               <DropdownMenuContent align="end" className="w-40 p-1">
                 <DropdownMenuItem 
                   className="text-xs rounded-md"
-                  onClick={() => setIsEditOpen(true)}
+                  onClick={() => onClick?.()}
                 >
                   <Edit2 className="w-3.5 h-3.5 mr-2 text-primary" />
                   Editar Detalles
@@ -451,14 +483,6 @@ function TaskCard({
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-
-            <EditTaskDialog 
-              task={task} 
-              boardId={boardId} 
-              open={isEditOpen} 
-              onOpenChange={setIsEditOpen} 
-              members={members}
-            />
           </div>
         </div>
         
