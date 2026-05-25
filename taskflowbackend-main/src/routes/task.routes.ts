@@ -5,19 +5,38 @@ import {
   createSubtask, getSubtasks, getTaskProgress,
   getDecoratedTask, addLabel, removeLabel,
   addAttachment, removeAttachment, upload,
+  getTransitions, transitionTask,
 } from '../controllers/task.controller';
 import { protect } from '../middlewares/auth.middleware';
 import { taskProxy } from '../structuralpattern/TaskProxy';
+import { executeCommand, undoCommand, redoCommand, getCommandHistory } from '../controllers/command.controller';
+import { AuditLogObserver } from '../behaviorpatterns/TaskObserver';
+import { getSortedTasks, getAvailableStrategies } from '../controllers/strategy.controller';
 
 const router = Router({ mergeParams: true });
 
-// Base CRUD — Proxy intercepta create, update, move, delete
+// ── Rutas estáticas PRIMERO (antes de /:id) ────────────────────────────────────
+
+// Base CRUD sin parámetro id
 router.get('/',                   protect, getTasks);
 router.get('/board/:id',          protect, getTasks);
 router.post('/',                  protect, createTask);
 router.post('/board/:id/factory', protect, createTask);
 router.post('/build',             protect, buildTask);
 router.post('/board/:id/builder', protect, buildTask);
+
+// Proxy — Log de auditoría
+router.get('/audit/log', protect, (_req, res) => res.json(taskProxy.getAuditLog()));
+
+// Observer — Audit log de eventos (rutas estáticas antes de /:id)
+router.get('/events/log', protect, (_req, res) => res.json(AuditLogObserver.getLog()));
+
+// Strategy — Ordenamiento (DEBE ir antes de /:id)
+router.get('/sort/strategies', protect, getAvailableStrategies);
+router.get('/sort',            protect, getSortedTasks);
+
+// ── Rutas con parámetro /:id DESPUÉS ──────────────────────────────────────────
+
 router.get('/:id',                protect, getTask);
 router.put('/:id',                protect, updateTask);
 router.put('/:id/move',           protect, moveTask);
@@ -33,35 +52,24 @@ router.get('/:id/progress',       protect, getTaskProgress);
 router.get('/:id/decorated',      protect, getDecoratedTask);
 
 // Decorator — Etiquetas
-router.post('/:id/labels',              protect, addLabel);
-router.delete('/:id/labels/:labelName', protect, removeLabel);
+router.post('/:id/labels',               protect, addLabel);
+router.delete('/:id/labels/:labelName',  protect, removeLabel);
 
-// Decorator — Adjuntos (multer middleware)
+// Decorator — Adjuntos
 router.post('/:id/attachments',              protect, upload.single('file'), addAttachment);
 router.delete('/:id/attachments/:filename',  protect, removeAttachment);
 
-// Proxy — Log de auditoría
-router.get('/audit/log', protect, (_req, res) => res.json(taskProxy.getAuditLog()));
+// Command — Undo/Redo
+router.post('/:id/commands', protect, executeCommand);
+router.post('/:id/undo',     protect, undoCommand);
+router.post('/:id/redo',     protect, redoCommand);
+router.get('/:id/history',   protect, getCommandHistory);
+
+// Observer — Eventos por tarea
+router.get('/:id/events', protect, (req, res) => res.json(AuditLogObserver.getLogByTask(req.params.id as string)));
+
+// State — Ciclo de vida
+router.get('/:id/transitions', protect, getTransitions);
+router.post('/:id/transition', protect, transitionTask);
 
 export default router;
-// ── Command Pattern — Undo/Redo ────────────────────────────────────────────────
-import {
-  executeCommand, undoCommand, redoCommand, getCommandHistory
-} from '../controllers/command.controller';
-
-router.post('/:id/commands', protect, executeCommand);  // ejecutar comando
-router.post('/:id/undo',     protect, undoCommand);     // deshacer (RF-06.2)
-router.post('/:id/redo',     protect, redoCommand);     // rehacer
-router.get('/:id/history',   protect, getCommandHistory); // historial (RF-06.1)
-// Observer — Audit log de eventos
-import { AuditLogObserver } from '../behaviorpatterns/TaskObserver';
-router.get('/events/log',         protect, (_req, res) => res.json(AuditLogObserver.getLog()));
-router.get('/:id/events',         protect, (req, res) => res.json(AuditLogObserver.getLogByTask(req.params.id as string)));
-// ── State Pattern — Ciclo de vida de la tarea ──────────────────────────────────
-import { getTransitions, transitionTask } from '../controllers/task.controller';
-router.get('/:id/transitions', protect, getTransitions);  // estados permitidos
-router.post('/:id/transition', protect, transitionTask);  // transicionar con validación
-// ── Strategy Pattern — Ordenamiento de tareas ──────────────────────────────────
-import { getSortedTasks, getAvailableStrategies } from '../controllers/strategy.controller';
-router.get('/sort/strategies', protect, getAvailableStrategies); // listar estrategias
-router.get('/sort',            protect, getSortedTasks);          // ordenar con estrategia
