@@ -35,6 +35,7 @@ import { TaskSortStrategy } from '@/components/task-sort-strategy';
 import { TaskEventFeed } from '@/components/task-event-feed';
 import { MediatorEventBus } from '@/components/mediator-event-bus';
 import { TemplateReportSelector } from '@/components/template-report-selector';
+import { TaskVisitorPanel } from '@/components/task-visitor-panel';
 
 export function ProjectDetailsPage() {
   const { id: projectId } = useParams();
@@ -117,6 +118,9 @@ export function ProjectDetailsPage() {
               <TabsTrigger value="reports" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
                 Reportes
               </TabsTrigger>
+              <TabsTrigger value="visitor" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                Análisis
+              </TabsTrigger>
             </TabsList>
             <div className="flex gap-2">
               <CreateBoardDialog projectId={projectId || ''}>
@@ -181,6 +185,13 @@ export function ProjectDetailsPage() {
             <div className="p-2 max-w-lg">
               <h2 className="text-sm font-semibold text-foreground/80 mb-4">Generar Reportes</h2>
               <TemplateReportSelector projectId={project._id} />
+            </div>
+          </TabsContent>
+
+          {/* Visitor — Análisis del árbol de tareas */}
+          <TabsContent value="visitor" className="flex-1 mt-4 outline-none">
+            <div className="p-2">
+              <TaskVisitorPanel projectId={project._id} />
             </div>
           </TabsContent>
         </Tabs>
