@@ -12,6 +12,10 @@ import { taskProxy } from '../structuralpattern/TaskProxy';
 import { executeCommand, undoCommand, redoCommand, getCommandHistory } from '../controllers/command.controller';
 import { AuditLogObserver } from '../behaviorpatterns/TaskObserver';
 import { getSortedTasks, getAvailableStrategies } from '../controllers/strategy.controller';
+import {
+  createSnapshot, getSnapshots, restoreSnapshot,
+  clearSnapshots, getSnapshotStats,
+} from '../controllers/memento.controller';
 
 const router = Router({ mergeParams: true });
 
@@ -32,8 +36,11 @@ router.get('/audit/log', protect, (_req, res) => res.json(taskProxy.getAuditLog(
 router.get('/events/log', protect, (_req, res) => res.json(AuditLogObserver.getLog()));
 
 // Strategy — Ordenamiento (DEBE ir antes de /:id)
-router.get('/sort/strategies', protect, getAvailableStrategies);
-router.get('/sort',            protect, getSortedTasks);
+router.get('/sort/strategies',    protect, getAvailableStrategies);
+router.get('/sort',               protect, getSortedTasks);
+
+// Memento — Stats globales (estático, antes de /:id)
+router.get('/snapshots/stats',    protect, getSnapshotStats);
 
 // ── Rutas con parámetro /:id DESPUÉS ──────────────────────────────────────────
 
@@ -69,7 +76,13 @@ router.get('/:id/history',   protect, getCommandHistory);
 router.get('/:id/events', protect, (req, res) => res.json(AuditLogObserver.getLogByTask(req.params.id as string)));
 
 // State — Ciclo de vida
-router.get('/:id/transitions', protect, getTransitions);
-router.post('/:id/transition', protect, transitionTask);
+router.get('/:id/transitions',  protect, getTransitions);
+router.post('/:id/transition',  protect, transitionTask);
+
+// Memento — Snapshots por tarea
+router.post('/:id/snapshot',               protect, createSnapshot);
+router.get('/:id/snapshots',               protect, getSnapshots);
+router.post('/:id/restore/:snapshotId',    protect, restoreSnapshot);
+router.delete('/:id/snapshots',            protect, clearSnapshots);
 
 export default router;

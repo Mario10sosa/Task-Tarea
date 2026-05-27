@@ -40,6 +40,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { SubtaskProgress } from '@/components/subtask-progress';
 import { TaskDecorations } from '@/components/task-decorations';
 import { UndoRedoBar } from '@/components/undo-redo-bar';
+import { TaskMementoPanel } from '@/components/task-memento-panel';
 
 interface TaskDetailSheetProps {
   task: Task | null;
@@ -262,6 +263,11 @@ export function TaskDetailSheet({
                 Historial de cambios
               </div>
               <UndoRedoBar taskId={task._id} />
+
+              <Separator />
+
+              {/* Memento — Snapshots del estado completo */}
+              <TaskMementoPanel taskId={task._id} />
             </div>
 
             <Separator className="bg-border/40" />
