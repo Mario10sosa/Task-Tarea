@@ -7,6 +7,7 @@ import taskRoutes         from './task.routes';
 import invitationRoutes   from './invitation.routes';
 import notificationRoutes from './notification.routes';
 import flyweightRoutes    from './flyweight.routes';
+import mediatorRoutes     from './mediator.routes';
 
 const router = Router();
 
@@ -21,5 +22,6 @@ router.use('/projects/:id',          invitationRoutes);
 router.use('/invitations',           invitationRoutes);
 router.use('/notifications',         notificationRoutes);
 router.use('/flyweight',             flyweightRoutes);   // Flyweight — pool de etiquetas
+router.use('/mediator',             mediatorRoutes);    // Mediator — TaskEventBus
 
 export default router;

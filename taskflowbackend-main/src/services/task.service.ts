@@ -7,6 +7,7 @@ import { buildTaskTree, LeafTask } from '../structuralpattern/TaskComposite';
 import { decorateTask } from '../structuralpattern/TaskDecorator';
 import { LabelFlyweightFactory, TaskLabelContext } from '../structuralpattern/LabelFlyweight';
 import { TaskEventEmitter } from '../behaviorpatterns/TaskObserver';
+import { taskEventBus } from '../behaviorpatterns/TaskMediator';
 
 // ── Creacionales (existentes) ─────────────────────────────────────────────────
 
@@ -30,6 +31,15 @@ export const createTaskWithFactory = async (boardId: string, projectId: string, 
     actorId,
     payload:   { type: resolvedType, columnId },
     timestamp: new Date(),
+  });
+
+  // Mediator: notificar al bus de eventos
+  await taskEventBus.notify('KanbanBoard', 'task:created', {
+    taskId:    task._id.toString(),
+    title:     task.title,
+    projectId,
+    boardId,
+    columnId,
   });
 
   return task;
@@ -96,6 +106,15 @@ export const moveTask = async (taskId: string, columnId: string, actorId?: strin
       assigneeId: (task as any).assignedTo?.toString(),
     },
     timestamp: new Date(),
+  });
+
+  // Mediator: notificar al bus de eventos
+  await taskEventBus.notify('KanbanBoard', 'task:moved', {
+    taskId:       task._id.toString(),
+    title:        task.title,
+    fromColumn:   original?.columnId ?? '',
+    targetColumn: columnId,
+    projectId:    task.projectId?.toString() ?? '',
   });
 
   return task;

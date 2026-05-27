@@ -33,6 +33,7 @@ import { ProjectDashboard } from '@/components/project-dashboard';
 import { TaskIteratorView } from '@/components/task-iterator-view';
 import { TaskSortStrategy } from '@/components/task-sort-strategy';
 import { TaskEventFeed } from '@/components/task-event-feed';
+import { MediatorEventBus } from '@/components/mediator-event-bus';
 
 export function ProjectDetailsPage() {
   const { id: projectId } = useParams();
@@ -109,6 +110,9 @@ export function ProjectDetailsPage() {
               <TabsTrigger value="activity" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
                 Actividad
               </TabsTrigger>
+              <TabsTrigger value="mediator" className="data-[state=active]:bg-background data-[state=active]:shadow-sm">
+                Event Bus
+              </TabsTrigger>
             </TabsList>
             <div className="flex gap-2">
               <CreateBoardDialog projectId={projectId || ''}>
@@ -153,11 +157,18 @@ export function ProjectDetailsPage() {
             <TaskIteratorView projectId={project._id} />
           </TabsContent>
 
-          {/* Observer — Feed de actividad del proyecto */}
+          {/* Observer — Feed de actividad */}
           <TabsContent value="activity" className="flex-1 mt-4 outline-none">
             <div className="p-2">
               <h2 className="text-sm font-semibold text-foreground/80 mb-4">Actividad del proyecto</h2>
               <TaskEventFeed />
+            </div>
+          </TabsContent>
+
+          {/* Mediator — TaskEventBus */}
+          <TabsContent value="mediator" className="flex-1 mt-4 outline-none">
+            <div className="p-2">
+              <MediatorEventBus />
             </div>
           </TabsContent>
         </Tabs>
