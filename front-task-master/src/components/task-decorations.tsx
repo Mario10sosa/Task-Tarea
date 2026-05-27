@@ -193,6 +193,7 @@ function AttachmentsSection({ taskId, attachments }: { taskId: string; attachmen
   const removeFile     = useRemoveAttachment(taskId);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (uploadFile.isPending) return; // previene doble envío
     const file = e.target.files?.[0];
     if (file) uploadFile.mutate(file);
     if (fileRef.current) fileRef.current.value = '';
@@ -212,7 +213,7 @@ function AttachmentsSection({ taskId, attachments }: { taskId: string; attachmen
           <Upload className="w-3 h-3 mr-1" />
           {uploadFile.isPending ? 'Subiendo...' : 'Subir'}
         </Button>
-        <input ref={fileRef} type="file" className="hidden" onChange={handleFileChange} />
+        <input ref={fileRef} type="file" className="hidden" onChange={handleFileChange} disabled={uploadFile.isPending} />
       </div>
 
       {attachments.length === 0 ? (

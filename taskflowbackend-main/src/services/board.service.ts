@@ -14,7 +14,7 @@ export const createBoard = async (projectId: string, name: string, columns: any[
 };
 
 export const updateBoard = async (boardId: string, updates: Partial<{ name: string; columns: any[] }>) => {
-  const board = await Board.findByIdAndUpdate(boardId, updates, { new: true });
+  const board = await Board.findByIdAndUpdate(boardId, updates, { returnDocument: 'after' });
   if (!board) throw new Error('Board not found');
   return board;
 };

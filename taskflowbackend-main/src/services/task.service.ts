@@ -226,6 +226,17 @@ export const addAttachment = async (
   taskId: string,
   attachment: { filename: string; originalName: string; mimetype: string; size: number; url: string }
 ) => {
+  // Verificar que el archivo no esté ya adjunto (previene duplicados)
+  const existing = await Task.findOne({
+    _id: taskId,
+    'attachments.filename': attachment.filename,
+  });
+  if (existing) {
+    const task = await Task.findById(taskId);
+    if (!task) throw new Error('Task not found');
+    return decorateTask(task);
+  }
+
   const task = await Task.findByIdAndUpdate(
     taskId,
     { $push: { attachments: { ...attachment, uploadedAt: new Date() } } },
