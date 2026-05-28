@@ -1,0 +1,22 @@
+services:
+  backend:
+    build:
+      context: ./taskflowbackend-main
+    container_name: taskflow-backend
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      PORT: 3000
+      MONGO_URI: mongodb://host.docker.internal:27017/project_management
+      JWT_SECRET: super_secret_jwt_key_here
+
+  frontend:
+    build:
+      context: ./front-task-master
+    container_name: taskflow-frontend
+    restart: always
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
