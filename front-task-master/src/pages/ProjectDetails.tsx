@@ -42,7 +42,8 @@ export function ProjectDetailsPage() {
   const { data: project, isLoading: isLoadingProject } = useProject(projectId);
   const { data: boards, isLoading: isLoadingBoards } = useBoards(projectId);
 
-  const [activeBoardId, setActiveBoardId] = useState<string | null>(null);
+  const [activeBoardId, setActiveBoardId] = useState<string | null>(null);;
+  const [sortedTasks, setSortedTasks] = useState<any[]>([]);
 
   // Set initial active board
   if (boards && boards.length > 0 && !activeBoardId) {
@@ -151,14 +152,29 @@ export function ProjectDetailsPage() {
           </TabsContent>
 
           {/* Strategy — Ordenamiento de tareas */}
-          <TabsContent value="sort" className="flex-1 mt-4 outline-none">
-            <div className="flex flex-col gap-4 p-2">
-              <div className="flex items-center gap-3">
-                <h2 className="text-sm font-semibold text-foreground/80">Ordenar tareas del proyecto</h2>
-                <TaskSortStrategy projectId={project._id} />
-              </div>
-            </div>
-          </TabsContent>
+<TabsContent value="sort" className="flex-1 mt-4 outline-none">
+  <div className="flex flex-col gap-4 p-2">
+    <div className="flex items-center gap-3">
+      <h2 className="text-sm font-semibold text-foreground/80">Ordenar tareas del proyecto</h2>
+      <TaskSortStrategy projectId={project._id} onSorted={setSortedTasks} />
+    </div>
+    <div className="flex flex-col gap-2 mt-2">
+      {sortedTasks.length === 0 && (
+        <p className="text-sm text-muted-foreground px-1">No hay tareas para mostrar.</p>
+      )}
+      {sortedTasks.map((task: any, idx: number) => (
+        <div key={task._id} className="flex items-center gap-3 rounded-lg border border-border/50 bg-muted/20 px-4 py-3">
+          <span className="text-xs text-muted-foreground w-5 text-right">{idx + 1}</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">{task.title}</p>
+            <p className="text-xs text-muted-foreground mt-0.5">{task.columnId} · {task.type ?? 'simple'}</p>
+          </div>
+          <Badge variant="outline" className="text-xs shrink-0">{task.priority ?? 'medium'}</Badge>
+        </div>
+      ))}
+    </div>
+  </div>
+</TabsContent>
 
           {/* Iterator — Recorrer colecciones */}
           <TabsContent value="iterate" className="flex-1 mt-4 outline-none">
