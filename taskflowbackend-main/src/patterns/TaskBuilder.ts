@@ -9,6 +9,15 @@ export class TaskBuilder {
     return this;
   }
   
+  setDescription(d: string) {
+  this.task.description = d;
+  return this;
+}
+
+setType(t: ITask['type']) {
+  this.task.type = t;
+  return this;
+}
   setPriority(p: ITask['priority']) {
     this.task.priority = p;
     return this;
