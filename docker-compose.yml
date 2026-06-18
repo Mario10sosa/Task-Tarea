@@ -8,8 +8,8 @@ services:
       - "3000:3000"
     environment:
       PORT: 3000
-      MONGO_URI: mongodb://host.docker.internal:27017/project_management
-      JWT_SECRET: super_secret_jwt_key_here
+      MONGO_URI: ${MONGO_URI:-mongodb://host.docker.internal:27017/project_management}
+      JWT_SECRET: ${JWT_SECRET}
 
   frontend:
     build:
